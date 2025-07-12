@@ -19,3 +19,6 @@ Route::post('/passports/generate', [\App\Http\Controllers\PassportController::cl
 
 // generate passport date routes
 Route::post('/passports/generate/data', [\App\Http\Controllers\PassportController::class, 'generatePassportDate']);
+
+// generate iban routes
+Route::post('/ibans/generate', [\App\Http\Controllers\IbanController::class, 'generateIban']);
