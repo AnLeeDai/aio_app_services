@@ -10,32 +10,27 @@ use Faker\Factory as Faker;
 
 class NameGeneratorController extends Controller
 {
-    /** ---- Cấu hình mặc định ---- */
-    private int $nameNumber = 1;          // số lượng tên cần sinh
-    private string $locale = 'en_US';  // locale Faker
-    private string $country = 'US';     // mã quốc gia ISO‑2
-
-    /** ---- Bản đồ quốc gia -> locale & thứ tự họ‑tên ---- */
-    private array $localeMap = [
-        'US' => ['locale' => 'en_US', 'order' => 'F M L'], // Tên‑Đệm‑Họ
+    /**
+     * Bản đồ quốc gia ➜ locale & pattern họ‑tên
+     * F = First, M = Middle, L = Last
+     */
+    private const LOCALE_MAP = [
+        'US' => ['locale' => 'en_US', 'order' => 'F M L'],
         'UK' => ['locale' => 'en_GB', 'order' => 'F M L'],
-        'VN' => ['locale' => 'vi_VN', 'order' => 'L M F'], // Họ‑Đệm‑Tên
+        'VN' => ['locale' => 'vi_VN', 'order' => 'L M F'],
         'DE' => ['locale' => 'de_DE', 'order' => 'F M L'],
         'FR' => ['locale' => 'fr_FR', 'order' => 'F M L'],
-        'JP' => ['locale' => 'ja_JP', 'order' => 'L F'],   // Họ trước (không có Đệm)
+        'JP' => ['locale' => 'ja_JP', 'order' => 'L F'],
         'ES' => ['locale' => 'es_ES', 'order' => 'F M L'],
         'IT' => ['locale' => 'it_IT', 'order' => 'F M L'],
         'RU' => ['locale' => 'ru_RU', 'order' => 'F M L'],
-        'CN' => ['locale' => 'zh_CN', 'order' => 'L F'],   // Họ trước (không có Đệm)
-        'KR' => ['locale' => 'ko_KR', 'order' => 'L F'],   // Họ trước (không có Đệm)
+        'CN' => ['locale' => 'zh_CN', 'order' => 'L F'],
+        'KR' => ['locale' => 'ko_KR', 'order' => 'L F'],
     ];
 
-    /**
-     * GET|POST: /api/generate-name
-     */
     public function generateName(Request $request)
     {
-        /* 1. Kiểm tra dữ liệu đầu vào */
+        // 1️⃣ Validate
         $validator = Validator::make($request->all(), [
             'name_number' => 'required|integer|min:1|max:100',
             'country' => 'string|size:2',
@@ -43,79 +38,79 @@ class NameGeneratorController extends Controller
             'gender' => 'nullable|in:male,female,random',
             'name_format' => 'nullable|in:first_last,first_middle_last',
         ]);
-
         if ($validator->fails()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => $validator->errors()->first(),
-            ], 422);
+            return $this->error($validator->errors()->first());
         }
 
-        /* 2. Đọc tuỳ chọn */
-        $this->nameNumber = (int) $request->input('name_number', 1);
-        $this->country = strtoupper($request->input('country', 'US'));
+        // 2️⃣ Extract options
+        $total = (int) $request->input('name_number', 1);
+        $countryCode = strtoupper($request->input('country', 'US'));
         $transAscii = $request->boolean('trans_ascii', false);
-        $inputGender = $request->input('gender', 'random'); // male|female|random
+        $genderOpt = $request->input('gender', 'random');
         $nameFormat = $request->input('name_format', 'first_middle_last');
 
-        // Nếu quốc gia không có trong map → mặc định US
-        if (!isset($this->localeMap[$this->country])) {
-            $this->country = 'US';
-        }
-        $this->locale = $this->localeMap[$this->country]['locale'];
-        $orderPattern = $this->localeMap[$this->country]['order'];
-
-        // Nếu người dùng chọn chỉ Tên‑Họ → loại ký hiệu M khỏi pattern
+        // 3️⃣ Resolve locale & pattern
+        [$locale, $order] = $this->resolveLocaleAndOrder($countryCode);
         if ($nameFormat === 'first_last') {
-            $orderPattern = str_replace('M', '', $orderPattern);
-            $orderPattern = preg_replace('/\s+/', ' ', trim($orderPattern)); // dọn dấu cách dư
+            $order = str_replace('M', '', $order); // bỏ đệm
+            $order = trim(preg_replace('/\s+/', ' ', $order));
         }
 
-        /* 3. Tạo Faker */
-        $faker = Faker::create($this->locale);
+        // 4️⃣ Faker instance (khởi tạo 1 lần)
+        $faker = Faker::create($locale);
 
-        /* 4. Sinh tên */
-        $results = [];
-        for ($i = 0; $i < $this->nameNumber; $i++) {
-            /* 4.1 Xác định giới tính */
-            $gender = $inputGender === 'random'
-                ? $faker->randomElement(['male', 'female'])
-                : $inputGender;
+        // 5️⃣ Generate
+        $names = collect(range(1, $total))->map(function () use ($faker, $genderOpt, $order, $transAscii) {
+            // Giới tính cụ thể hoặc random
+            $gender = $genderOpt === 'random' ? $faker->randomElement(['male', 'female']) : $genderOpt;
 
-            /* 4.2 Tạo Tên chính & (nếu cần) Tên đệm */
-            $firstName = $gender === 'male' ? $faker->firstNameMale : $faker->firstNameFemale;
-            $middleName = '';
-            if (str_contains($orderPattern, 'M')) {
+            $first = $gender === 'male' ? $faker->firstNameMale : $faker->firstNameFemale;
+            $middle = '';
+            if (str_contains($order, 'M')) {
                 do {
-                    $middleName = $gender === 'male' ? $faker->firstNameMale : $faker->firstNameFemale;
-                } while ($middleName === $firstName);
+                    $middle = $gender === 'male' ? $faker->firstNameMale : $faker->firstNameFemale;
+                } while ($middle === $first);
             }
+            $last = $faker->lastName;
 
-            /* 4.3 Tạo Họ */
-            $lastName = $faker->lastName;
+            // Ghép
+            $tokens = ['F' => $first, 'M' => $middle, 'L' => $last];
+            $full = collect(str_split(str_replace(' ', '', $order)))
+                ->map(fn($t) => $tokens[$t] ?? '')
+                ->filter()
+                ->implode(' ');
 
-            /* 4.4 Ghép theo pattern */
-            $tokens = ['F' => $firstName, 'M' => $middleName, 'L' => $lastName];
-            $nameParts = array_map(
-                fn($t) => $tokens[$t] ?? '',
-                str_split(str_replace(' ', '', $orderPattern))
-            );
-            $fullName = preg_replace('/\s+/', ' ', trim(implode(' ', $nameParts)));
-
-            /* 4.5 Chuyển ASCII nếu cần */
             if ($transAscii) {
-                $fullName = Str::ascii($fullName);
+                $full = Str::ascii($full);
             }
+            return $full;
+        })->all();
 
-            $results[] = $fullName;
-        }
-
-        /* 5. Trả JSON */
+        // 6️⃣ Output
         return response()->json([
             'status' => 'success',
-            'message' => 'Tạo thành công ' . count($results) . ' tên',
-            'country' => $this->country,
-            'data' => $results,
+            'message' => 'Tạo thành công ' . count($names) . ' tên',
+            'country' => $countryCode,
+            'data' => $names,
         ]);
+    }
+
+    /* --------- Helpers --------- */
+
+    private function resolveLocaleAndOrder(string $country): array
+    {
+        if (!isset(self::LOCALE_MAP[$country])) {
+            $country = 'US';
+        }
+        $info = self::LOCALE_MAP[$country];
+        return [$info['locale'], $info['order']];
+    }
+
+    private function error(string $msg)
+    {
+        return response()->json([
+            'status' => 'error',
+            'message' => $msg,
+        ], 422);
     }
 }
