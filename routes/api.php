@@ -1,8 +1,12 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\NameGeneratorController;
 use App\Http\Controllers\PasswordGeneratorController;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\BirthdayController;
+use App\Http\Controllers\PassportController;
+use App\Http\Controllers\IbanController;
+use App\Http\Controllers\LocationController;
 
 // generate name routes
 Route::post('/names/generate', [NameGeneratorController::class, 'generateName']);
@@ -11,14 +15,17 @@ Route::post('/names/generate', [NameGeneratorController::class, 'generateName'])
 Route::post('/passwords/generate', [PasswordGeneratorController::class, 'generatePassword']);
 
 // generate birthday routes
-Route::post('/birthdays/generate', [\App\Http\Controllers\BirthdayController::class, 'generateBirthday']);
+Route::post('/birthdays/generate', [BirthdayController::class, 'generateBirthday']);
 
 
 // generate passport routes
-Route::post('/passports/generate', [\App\Http\Controllers\PassportController::class, 'generatePassport']);
+Route::post('/passports/generate', [PassportController::class, 'generatePassport']);
 
 // generate passport date routes
-Route::post('/passports/generate/data', [\App\Http\Controllers\PassportController::class, 'generatePassportDate']);
+Route::post('/passports/generate/date', [PassportController::class, 'generatePassportDate']);
 
 // generate iban routes
-Route::post('/ibans/generate', [\App\Http\Controllers\IbanController::class, 'generateIban']);
+Route::post('/ibans/generate', [IbanController::class, 'generateIban']);
+
+// generate location routes
+Route::post('/locations/addresses', [LocationController::class, 'addresses']);
