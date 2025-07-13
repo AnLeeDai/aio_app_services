@@ -1,12 +1,12 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\LocationController;
 use App\Http\Controllers\NameGeneratorController;
 use App\Http\Controllers\PasswordGeneratorController;
 use App\Http\Controllers\BirthdayController;
 use App\Http\Controllers\PassportController;
 use App\Http\Controllers\IbanController;
-use App\Http\Controllers\LocationController;
+use Illuminate\Support\Facades\Route;
 
 // generate name routes
 Route::post('/names/generate', [NameGeneratorController::class, 'generateName']);
@@ -28,4 +28,4 @@ Route::post('/passports/generate/date', [PassportController::class, 'generatePas
 Route::post('/ibans/generate', [IbanController::class, 'generateIban']);
 
 // generate location routes
-Route::post('/locations/addresses', [LocationController::class, 'addresses']);
+Route::post('/locations/generate', [LocationController::class, 'generateAddresses']);
