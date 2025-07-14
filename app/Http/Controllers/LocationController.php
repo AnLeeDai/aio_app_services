@@ -20,8 +20,9 @@ class LocationController extends Controller
         $validator = Validator::make($request->all(), [
             'country' => 'required|string|max:100',
             'state' => 'sometimes|string|max:100',
-            'city' => 'sometimes|string|max:100',
-            'limit' => 'required|integer|min:1|max:10000',
+            // 'city' => 'sometimes|string|max:100',
+            'limit' => 'required|integer|min:1|max:100',
+            'trans_ascii' => 'sometimes|boolean',
         ]);
         if ($validator->fails()) {
             return $this->error($validator->errors()->first());
@@ -32,11 +33,12 @@ class LocationController extends Controller
         $state = $request->input('state');
         $city = $request->input('city');
         $limit = (int) $request->input('limit');
+        $transAscii = $request->boolean('trans_ascii', false);  // ⬅ đọc cờ
 
         $batch = 3_000;   // phần tử/raw Overpass mỗi lần
         $tries = 5;       // số lần gọi Overpass tối đa
 
-        /* ---------- 3. Thu thập (không lọc trùng) ---------- */
+        /* ---------- 3. Thu thập --------- */
         $fresh = collect();
         $attempt = 0;
 
@@ -57,7 +59,7 @@ class LocationController extends Controller
 
             $candidates = collect($resp)
                 ->filter(fn($e) => $this->hasFullAddress($e['tags'] ?? []))
-                ->shuffle();                               // không reject/unique
+                ->shuffle();
 
             $need = $limit - $fresh->count();
             $fresh = $fresh->merge($candidates->take($need));
@@ -72,13 +74,18 @@ class LocationController extends Controller
         }
 
         /* ---------- 5. Chuẩn hoá & trả về ---------- */
-        $data = $fresh->map(fn($e) => [
-            'address' => $this->formatAddress($e['tags']),
-        ])->values();
+        $data = $fresh->map(function ($e) use ($transAscii) {
+            $addr = $this->formatAddress($e['tags']);
+            if ($transAscii) {
+                $addr = Str::ascii($addr);               // ⬅ bỏ dấu nếu cần
+            }
+            return ['address' => $addr];
+        })->values();
 
         return response()->json([
             'status' => 'success',
             'message' => 'Tạo thành công ' . $data->count() . ' địa chỉ',
+            'trans_ascii' => $transAscii,
             'data' => $data,
         ]);
     }
@@ -122,8 +129,6 @@ class LocationController extends Controller
 
         /* ---- country: đổi mã → tên đầy đủ ---- */
         $country = $tags['addr:country'] ?? 'Brazil';
-
-        // Nếu chuỗi <= 3 ký tự ⇒ khả năng cao là mã quốc gia
         if (mb_strlen($country) <= 3) {
             $country = match (strtoupper($country)) {
                 'BR', 'BRA' => 'Brazil',
@@ -132,11 +137,9 @@ class LocationController extends Controller
             };
         }
 
-        /* ---- ghép địa chỉ ---- */
         $line1 = "{$street}, {$number}";
         if ($suburb)
             $line1 .= " - {$suburb}";
-
         $line2 = "{$city} - {$state}";
 
         return "{$line1}, {$line2}, {$postcode}, {$country}";
@@ -147,7 +150,6 @@ class LocationController extends Controller
         if (mb_strlen($state) <= 3) {
             return mb_strtoupper($state);
         }
-
         $abbr = '';
         foreach (preg_split('/\s+/', $state) as $w) {
             $abbr .= mb_strtoupper(mb_substr($w, 0, 1));

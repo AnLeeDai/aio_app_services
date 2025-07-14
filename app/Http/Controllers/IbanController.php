@@ -13,8 +13,9 @@ class IbanController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'iban_number' => 'required|integer|min:1|max:100',
-            'country' => 'required|string|in:BR',            // chỉ BR
+            'country' => 'required|string|in:BR',
         ]);
+
         if ($validator->fails()) {
             return $this->error($validator->errors()->first());
         }
