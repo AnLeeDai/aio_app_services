@@ -22,15 +22,17 @@ class PassportController extends Controller
             'id_number' => 'required|integer|min:1|max:100',
             'country' => 'required|string|in:US,BR',
         ]);
+
         if ($validator->fails()) {
             return $this->error($validator->errors()->first());
         }
 
         $total = (int) $request->input('id_number');
         $countryCode = strtoupper($request->input('country'));
+        $prefix = strtoupper($request->input('prefix', ''));
 
         $ids = collect(range(1, $total))
-            ->map(fn() => $this->generateNumberForCountry($countryCode))
+            ->map(fn() => $this->generateNumberForCountry($countryCode, $prefix))
             ->all();
 
         return response()->json([
@@ -48,6 +50,7 @@ class PassportController extends Controller
             'country' => 'required|string|in:US,BR',
             'format' => 'sometimes|string|in:Y-m-d,d/m/Y,d-m-Y,m/d/Y',
         ]);
+
         if ($validator->fails()) {
             return $this->error($validator->errors()->first());
         }
@@ -72,23 +75,45 @@ class PassportController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Tạo thành công ' . count($pairs) . ' cặp ngày passport',
-            'data' => $pairs,  // chỉ issue_date & expiry_date đã theo format yêu cầu
+            'data' => $pairs,
         ]);
     }
 
     /* ---------- Helpers ---------- */
 
-    /** US: 1 letter + 8 digits | BR: 2 letters + 6 digits */
-    private function generateNumberForCountry(string $country): string
+    /**
+     *  US: 1 letter + 8 digits   – digit#1 ≠ 0
+     *  BR: 2 letters + 6 digits – digit#1 ≠ 0
+     */
+    private function generateNumberForCountry(string $country, string $prefix = ''): string
     {
         return match ($country) {
-            'US' => chr(random_int(65, 90)) .
-            str_pad(random_int(0, 99_999_999), 8, '0', STR_PAD_LEFT),
-            'BR' => chr(random_int(65, 90)) .
-            chr(random_int(65, 90)) .
-            str_pad(random_int(0, 999_999), 6, '0', STR_PAD_LEFT),
+            'US' => $this->buildId(
+                $prefix ?: chr(random_int(65, 90)), // 1 letter
+                8                                   // total digits
+            ),
+
+            'BR' => $this->buildId(
+                $prefix ?: (chr(random_int(65, 90)) . chr(random_int(65, 90))), // 2 letters
+                6                                   // total digits
+            ),
+
             default => throw new \InvalidArgumentException('Unsupported country code'),
         };
+    }
+
+    /** Ghép $letters + $totalDigits; chữ số đầu tiên luôn 1-9 (≠ 0) */
+    private function buildId(string $letters, int $totalDigits): string
+    {
+        $firstDigit = random_int(1, 9); // không bao giờ 0
+        $rest = str_pad(
+            (string) random_int(0, (10 ** ($totalDigits - 1)) - 1),
+            $totalDigits - 1,
+            '0',
+            STR_PAD_LEFT
+        );
+
+        return $letters . $firstDigit . $rest;
     }
 
     /** Số năm hiệu lực (người lớn) */
