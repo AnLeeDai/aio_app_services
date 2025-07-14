@@ -10,10 +10,6 @@ use Faker\Factory as Faker;
 
 class NameGeneratorController extends Controller
 {
-    /**
-     * Bản đồ quốc gia ➜ locale & pattern họ‑tên
-     * F = First, M = Middle, L = Last
-     */
     private const LOCALE_MAP = [
         'US' => ['locale' => 'en_US', 'order' => 'F M L'],
         'UK' => ['locale' => 'en_GB', 'order' => 'F M L'],
@@ -26,6 +22,7 @@ class NameGeneratorController extends Controller
         'RU' => ['locale' => 'ru_RU', 'order' => 'F M L'],
         'CN' => ['locale' => 'zh_CN', 'order' => 'L F'],
         'KR' => ['locale' => 'ko_KR', 'order' => 'L F'],
+        'BR' => ['locale' => 'pt_BR', 'order' => 'F M L'],
     ];
 
     public function generateName(Request $request)
@@ -89,7 +86,7 @@ class NameGeneratorController extends Controller
         // 6️⃣ Output
         return response()->json([
             'status' => 'success',
-            'message' => 'Tạo thành công ' . count($names) . ' tên',
+            'message' => 'Tạo thành công ' . count($names) . ' tên ' . $countryCode,
             'country' => $countryCode,
             'data' => $names,
         ]);
