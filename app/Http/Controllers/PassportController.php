@@ -45,25 +45,35 @@ class PassportController extends Controller
     /* ---------- Sinh (issue_date, expiry_date) ---------- */
     public function generatePassportDate(Request $request)
     {
-        $validator = Validator::make($request->all(), [
+        Validator::make($request->all(), [
             'date_number' => 'required|integer|min:1|max:100',
             'country' => 'required|string|in:US,BR',
             'format' => 'sometimes|string|in:Y-m-d,d/m/Y,d-m-Y,m/d/Y',
-        ]);
-
-        if ($validator->fails()) {
-            return $this->error($validator->errors()->first());
-        }
+        ])->validate();
 
         $total = (int) $request->input('date_number');
         $country = strtoupper($request->input('country'));
-        $formatOut = $request->input('format', 'Y-m-d');          // mặc định ISO
+        $formatOut = $request->input('format', 'Y-m-d');
         $validYrs = $this->getValidityYears($country);
 
-        $pairs = collect(range(1, $total))->map(function () use ($validYrs, $formatOut) {
-            /* Issue date ngẫu nhiên trong khoảng vẫn còn hiệu lực */
-            $maxPastDays = $validYrs * 365 - 2;                 // -2 để chắc chắn chưa hết hạn
-            $issue = Carbon::today()->subDays(random_int(0, $maxPastDays));
+        // 1. Muộn nhất để passport còn ít nhất 2 ngày hiệu lực
+        $latestIssue = Carbon::today()->subDays(2);
+
+        // 2. Lấy số năm tối thiểu
+        $minYearsAgo = 5;
+
+        // 3. Lấy số năm thực tế để sub đi: không quá validYrs, và không quá minYearsAgo
+        $yearsToSubtract = min($validYrs, $minYearsAgo);
+
+        // 4. Tính startDate = ngày 1/1 của (hôm nay - $yearsToSubtract năm)
+        $startDate = Carbon::today()
+            ->copy()
+            ->subYears($yearsToSubtract)
+            ->startOfYear();
+
+        $pairs = collect(range(1, $total))->map(function () use ($startDate, $latestIssue, $validYrs, $formatOut) {
+            $ts = random_int($startDate->timestamp, $latestIssue->timestamp);
+            $issue = Carbon::createFromTimestamp($ts);
             $expiry = $issue->copy()->addYears($validYrs)->subDay();
 
             return [
