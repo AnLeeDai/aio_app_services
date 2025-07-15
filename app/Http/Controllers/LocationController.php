@@ -21,7 +21,7 @@ class LocationController extends Controller
             'country_code' => 'required_without:country|string|size:2',
             'country' => 'required_without:country_code|string|max:100',
             'state' => 'sometimes|string|max:100',
-            'city' => 'sometimes|string|max:100',
+            // 'city' => 'sometimes|string|max:100',
             'limit' => 'required|integer|min:1|max:100',
             'trans_ascii' => 'sometimes|boolean',
         ])->validate();
