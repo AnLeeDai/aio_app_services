@@ -11,10 +11,9 @@ class BirthdayController extends Controller
 {
     public function generateBirthday(Request $request)
     {
-        /* 1. Xác thực đầu vào */
         $validator = Validator::make($request->all(), [
             'dob_num' => 'required|integer|min:1|max:100',
-            'min_age' => 'required|integer|min:0|max:18',
+            'min_age' => 'required|integer|min:18',
             'max_age' => 'required|integer|min:0|max:100',
             'date_format' => 'nullable|string'
         ]);
