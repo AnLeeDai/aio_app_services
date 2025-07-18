@@ -6,7 +6,10 @@ use App\Http\Controllers\PasswordGeneratorController;
 use App\Http\Controllers\BirthdayController;
 use App\Http\Controllers\PassportController;
 use App\Http\Controllers\IbanController;
+use App\Http\Controllers\ServerHealCheck;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/heal-check', [ServerHealCheck::class, 'index']);
 
 // generate name routes
 Route::post('/names/generate', [NameGeneratorController::class, 'generateName']);
