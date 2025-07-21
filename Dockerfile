@@ -1,33 +1,23 @@
 FROM php:8.2-fpm
 
+WORKDIR /var/www
+
 RUN apt-get update && apt-get install -y \
-    nginx \
-    git curl zip unzip \
-    libpng-dev libjpeg-dev libonig-dev libxml2-dev libzip-dev \
-    sqlite3 libsqlite3-dev \
-    && docker-php-ext-install pdo pdo_mysql mbstring zip exif pcntl bcmath gd
+    zip unzip curl git libxml2-dev libzip-dev libpng-dev libjpeg-dev libonig-dev \
+    sqlite3 libsqlite3-dev
+
+RUN docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd zip
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-WORKDIR /var/www
+COPY . /var/www
+COPY --chown=www-data:www-data . /var/www
 
-COPY ./app /var/www
+RUN chmod -R 755 /var/www
+RUN composer install
 
-COPY ./docker/nginx/nginx.conf /etc/nginx/sites-available/default
+COPY .env.example .env
+RUN php artisan key:generate
 
-RUN chown -R www-data:www-data /var/www \
-    && chmod -R 755 /var/www
-
-RUN composer install --no-dev --optimize-autoloader \
-    && php artisan config:cache \
-    && php artisan route:cache \
-    && php artisan view:cache
-
-RUN php artisan storage:link || true
-
-COPY ./docker/start.sh /start.sh
-RUN chmod +x /start.sh
-
-EXPOSE 8080
-
-CMD ["/start.sh"]
+EXPOSE 8000
+CMD php artisan serve --host=0.0.0.0 --port=8000
