@@ -4,12 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Intl\Countries;
 
 class LocationController extends Controller
 {
@@ -87,65 +85,47 @@ class LocationController extends Controller
         $areaQuery = $this->buildAreaQuery($countryCode, null, $state, $city);
 
         /* -------------------------------------------------------------
-         | 4‒ Cache key + TTL
+         | 4‒ Lấy hoặc tạo dữ liệu
          |-------------------------------------------------------------*/
-        $cacheKey = 'address:' . md5(json_encode([
-            'country_code' => $countryCode,
-            'state' => $state,
-            'city' => $city,
-            'limit' => $limit,
-            'ascii' => $transAscii,
-        ]));
-        $ttl = (int) config('cache.ttl', env('ADDRESS_CACHE_TTL', 900));
+        $batch = 3000;
+        $tries = 5;
+        $fresh = collect();
+        $attempt = 0;
 
-        /* -------------------------------------------------------------
-         | 5‒ Lấy hoặc tạo dữ liệu
-         |-------------------------------------------------------------*/
-        $data = Cache::remember($cacheKey, $ttl, function () use ($areaQuery, $limit, $transAscii, $countryName) {
-            $batch = 3000;
-            $tries = 5;
-            $fresh = collect();
-            $attempt = 0;
+        while ($fresh->count() < $limit && $attempt < $tries) {
+            $attempt++;
 
-            while ($fresh->count() < $limit && $attempt < $tries) {
-                $attempt++;
+            $query = "[out:json][timeout:300];\n"
+                . "{$areaQuery}\n"
+                . "nwr['addr:housenumber']['building'~'^(house|residential)$'](area.t);"
+                . " out center {$batch};";
 
-                $query = "[out:json][timeout:300];\n"
-                    . "{$areaQuery}\n"
-                    . "nwr['addr:housenumber']['building'~'^(house|residential)$'](area.t);"
-                    . " out center {$batch};";
+            $resp = Http::timeout(120)
+                ->get('https://overpass-api.de/api/interpreter', ['data' => $query])
+                ->json('elements', []);
 
-                $resp = Http::timeout(120)
-                    ->get('https://overpass-api.de/api/interpreter', ['data' => $query])
-                    ->json('elements', []);
+            $cands = collect($resp)
+                ->filter(fn($e) => $this->hasBasicAddress($e['tags'] ?? [])
+                    && $this->isResidential($e['tags'] ?? []))
+                ->shuffle();
 
-                $cands = collect($resp)
-                    ->filter(fn($e) => $this->hasBasicAddress($e['tags'] ?? [])
-                        && $this->isResidential($e['tags'] ?? []))
-                    ->shuffle();
+            $fresh = $fresh->merge($cands->take($limit - $fresh->count()));
+        }
 
-                $fresh = $fresh->merge($cands->take($limit - $fresh->count()));
-            }
-
-            if ($fresh->isEmpty()) {
-                return null; // báo lỗi bên ngoài
-            }
-
-            return $fresh->map(function ($e) use ($transAscii, $countryName) {
-                $addr = $this->formatAddress($e['tags'], $countryName);
-                return ['address' => $transAscii ? Str::ascii($addr) : $addr];
-            })->values();
-        });
-
-        if ($data === null) {
+        if ($fresh->isEmpty()) {
             return $this->error(
                 "Không đủ địa chỉ nhà dân để trả về {$limit} kết quả.",
                 Response::HTTP_UNPROCESSABLE_ENTITY
             );
         }
 
+        $data = $fresh->map(function ($e) use ($transAscii, $countryName) {
+            $addr = $this->formatAddress($e['tags'], $countryName);
+            return ['address' => $transAscii ? Str::ascii($addr) : $addr];
+        })->values();
+
         /* -------------------------------------------------------------
-         | 6‒ Trả về
+         | 5‒ Trả về
          |-------------------------------------------------------------*/
         return response()->json([
             'status' => 'success',
@@ -227,3 +207,4 @@ class LocationController extends Controller
         ], $code);
     }
 }
+
