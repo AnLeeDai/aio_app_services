@@ -1,0 +1,16 @@
+services:
+  # Web service (Docker build như hiện tại)
+  - type: web
+    name: laravel-web
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter # hoặc standard/pro
+
+  # Cron job – chạy schedule:run
+  - type: cron
+    name: laravel-scheduler
+    env: docker # tái dùng đúng repo & Dockerfile
+    dockerfilePath: ./Dockerfile
+    schedule: "*/15 * * * *" # 15-phút
+    cmd: "php artisan schedule:run"
+    plan: starter # cron cần plan Starter+  :contentReference[oaicite:2]{index=2}
