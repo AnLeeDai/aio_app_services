@@ -60,9 +60,8 @@ class LocationController extends Controller
          |   Chỉ còn country_code / country tùy chọn; state tùy chọn
          |-------------------------------------------------------------*/
         Validator::make($request->all(), [
-            'country_code' => 'nullable|string|size:2',
-            'country' => 'nullable|string|max:100',
             'state' => 'sometimes|string|max:100',
+            'city' => 'sometimes|string|max:100',
             'limit' => 'required|integer|min:1|max:100',
             'trans_ascii' => 'sometimes|boolean',
         ])->validate();
@@ -97,7 +96,7 @@ class LocationController extends Controller
             'limit' => $limit,
             'ascii' => $transAscii,
         ]));
-        $ttl = (int) config('cache.ttl', env('ADDRESS_CACHE_TTL', 3600));
+        $ttl = (int) config('cache.ttl', env('ADDRESS_CACHE_TTL', 900));
 
         /* -------------------------------------------------------------
          | 5‒ Lấy hoặc tạo dữ liệu
