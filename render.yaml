@@ -4,6 +4,8 @@ services:
     runtime: docker
     env: docker
     plan: free
+    dockerfilePath: ./docker/php/Dockerfile
+    dockerContext: .
     autoDeploy: true
     envVars:
       - key: APP_ENV
@@ -14,6 +16,8 @@ services:
         generateValue: true
       - key: APP_URL
         value: https://aio-app-services.onrender.com/
+      - key: PORT
+        value: 8080
 
       - key: DB_CONNECTION
         value: mysql
@@ -34,9 +38,13 @@ services:
         value: redis://default:NBnWPEGCjICGZo0sGC0gpw0s0TxCnK9P@redis-11707.crce185.ap-seast-1-1.ec2.redns.redis-cloud.com:11707
 
     buildCommand: |
+      cd app
       composer install --no-dev --optimize-autoloader
       php artisan config:cache
       php artisan route:cache
       php artisan view:cache
+
     startCommand: |
-      php artisan migrate --force && php-fpm
+      cd app
+      php artisan migrate --force
+      nginx -g "daemon off;"
