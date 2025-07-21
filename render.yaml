@@ -4,7 +4,7 @@ services:
     runtime: docker
     env: docker
     plan: free
-    dockerfilePath: ./docker/php/Dockerfile
+    dockerfilePath: docker/php/Dockerfile
     dockerContext: .
     autoDeploy: true
     envVars:
