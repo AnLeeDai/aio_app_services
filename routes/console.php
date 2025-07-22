@@ -9,12 +9,12 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 
-Schedule::call(function () {
-    Http::post(config('app.url') . '/api/locations/warm', [
-        'limit' => 100,
-    ]);
-})
-    ->name('warm_brazil_cache')
-    ->everyFifteenMinutes()
-    ->withoutOverlapping(14)
-    ->onOneServer();
+// Schedule::call(function () {
+//     Http::post(config('app.url') . '/api/locations/warm', [
+//         'limit' => 100,
+//     ]);
+// })
+//     ->name('warm_brazil_cache')
+//     ->everyFifteenMinutes()
+//     ->withoutOverlapping(14)
+//     ->onOneServer();

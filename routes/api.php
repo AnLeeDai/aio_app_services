@@ -32,6 +32,3 @@ Route::post('/ibans/generate', [IbanController::class, 'generateIban']);
 
 // generate location routes
 Route::post('/locations/generate', [LocationController::class, 'generateAddresses']);
-
-// warm location
-Route::post('/locations/warm', [LocationController::class, 'warmUp']);
