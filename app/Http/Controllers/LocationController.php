@@ -8,52 +8,85 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Intl\Countries;
 
 class LocationController extends Controller
 {
+    /**
+     * Danh sách tất cả bang của Brazil (26 + Distrito Federal)
+     */
+    private array $brStates = [
+        // Vùng Bắc
+        'Acre',
+        'Amapá',
+        'Amazonas',
+        'Pará',
+        'Rondônia',
+        'Roraima',
+        'Tocantins',
+        // Vùng Đông Bắc
+        'Alagoas',
+        'Bahia',
+        'Ceará',
+        'Maranhão',
+        'Paraíba',
+        'Pernambuco',
+        'Piauí',
+        'Rio Grande do Norte',
+        'Sergipe',
+        // Vùng Trung Tây
+        'Goiás',
+        'Mato Grosso',
+        'Mato Grosso do Sul',
+        'Distrito Federal',
+        // Vùng Đông Nam
+        'Espírito Santo',
+        'Minas Gerais',
+        'Rio de Janeiro',
+        'São Paulo',
+        // Vùng Nam
+        'Paraná',
+        'Rio Grande do Sul',
+        'Santa Catarina',
+    ];
+
     public function generateAddresses(Request $request)
     {
         set_time_limit(300);
 
-        // 1. Validate input
+        /* -------------------------------------------------------------
+         | 1‒ Validate input
+         |   Chỉ còn country_code / country tùy chọn; state tùy chọn
+         |-------------------------------------------------------------*/
         Validator::make($request->all(), [
-            'country_code' => 'required_without:country|string|size:2',
-            'country' => 'required_without:country_code|string|max:100',
             'state' => 'sometimes|string|max:100',
-            // 'city' => 'sometimes|string|max:100',
+            'city' => 'sometimes|string|max:100',
             'limit' => 'required|integer|min:1|max:100',
             'trans_ascii' => 'sometimes|boolean',
         ])->validate();
 
-        // 2. Read parameters
-        $countryCode = strtoupper($request->input('country_code', ''));
-        $countryName = $request->input('country', '');
+        /* -------------------------------------------------------------
+         | 2‒ Fix country = Brazil (BR) & đọc tham số
+         |-------------------------------------------------------------*/
+        $countryCode = 'BR';
+        $countryName = 'Brazil';
         $state = $request->input('state');
-        $city = $request->input('city');
+        $city = $request->input('city');        // vẫn cho phép lọc city
         $limit = (int) $request->input('limit');
         $transAscii = $request->boolean('trans_ascii', false);
 
-        // 3. Resolve country name
-        if ($request->filled('country_code')) {
-            try {
-                $resolvedCountry = Countries::getName($countryCode, 'en');
-            } catch (\Throwable $e) {
-                $resolvedCountry = $countryCode;
-            }
-        } else {
-            $resolvedCountry = $countryName;
+        // Tự chọn bang ngẫu nhiên nếu không truyền
+        if (empty($state)) {
+            $state = $this->brStates[array_rand($this->brStates)];
         }
 
-        // 4. Build Overpass area query
-        $areaQuery = $this->buildAreaQuery(
-            $request->filled('country_code') ? $countryCode : null,
-            $request->filled('country_code') ? null : $countryName,
-            $state,
-            $city
-        );
+        /* -------------------------------------------------------------
+         | 3‒ Build Overpass area query
+         |-------------------------------------------------------------*/
+        $areaQuery = $this->buildAreaQuery($countryCode, null, $state, $city);
 
-        // 5. Fetch and filter
+        /* -------------------------------------------------------------
+         | 4‒ Lấy hoặc tạo dữ liệu
+         |-------------------------------------------------------------*/
         $batch = 3000;
         $tries = 5;
         $fresh = collect();
@@ -62,83 +95,72 @@ class LocationController extends Controller
         while ($fresh->count() < $limit && $attempt < $tries) {
             $attempt++;
 
-            // Query only houses/residential with address tags
             $query = "[out:json][timeout:300];\n"
                 . "{$areaQuery}\n"
-                . "nwr['addr:housenumber']['building'~'^(house|residential)$'](area.t); out center {$batch};";
+                . "nwr['addr:housenumber']['building'~'^(house|residential)$'](area.t);"
+                . " out center {$batch};";
 
             $resp = Http::timeout(120)
                 ->get('https://overpass-api.de/api/interpreter', ['data' => $query])
                 ->json('elements', []);
 
-            // Require street, housenumber, postcode, and residential building
             $cands = collect($resp)
-                ->filter(fn($e) => $this->hasBasicAddress($e['tags'] ?? []) && $this->isResidential($e['tags'] ?? []))
+                ->filter(fn($e) => $this->hasBasicAddress($e['tags'] ?? [])
+                    && $this->isResidential($e['tags'] ?? []))
                 ->shuffle();
 
-            $fresh = $fresh->merge(
-                $cands->take($limit - $fresh->count())
-            );
+            $fresh = $fresh->merge($cands->take($limit - $fresh->count()));
         }
 
         if ($fresh->isEmpty()) {
             return $this->error(
-                "Không đủ địa chỉ nhà dân để trả về {$limit} kết quả (chỉ có {$fresh->count()}).",
+                "Không đủ địa chỉ nhà dân để trả về {$limit} kết quả.",
                 Response::HTTP_UNPROCESSABLE_ENTITY
             );
         }
 
-        // 6. Format and return
-        $data = $fresh->map(function ($e) use ($transAscii, $resolvedCountry) {
-            $addr = $this->formatAddress($e['tags'], $resolvedCountry);
-            if ($transAscii) {
-                $addr = Str::ascii($addr);
-            }
-            return ['address' => $addr];
+        $data = $fresh->map(function ($e) use ($transAscii, $countryName) {
+            $addr = $this->formatAddress($e['tags'], $countryName);
+            return ['address' => $transAscii ? Str::ascii($addr) : $addr];
         })->values();
 
+        /* -------------------------------------------------------------
+         | 5‒ Trả về
+         |-------------------------------------------------------------*/
         return response()->json([
             'status' => 'success',
-            'message' => 'Tạo thành công ' . $data->count() . ' địa chỉ nhà dân',
+            'message' => "Tạo thành công {$data->count()} địa chỉ nhà dân (bang {$state})",
             'trans_ascii' => $transAscii,
+            'state' => $state,
             'data' => $data,
         ]);
     }
 
+    /* =============================================================
+     |  Các hàm hỗ trợ
+     |=============================================================*/
     private function buildAreaQuery(?string $code, ?string $name, ?string $state, ?string $city): string
     {
-        if ($code) {
-            $q = 'area["boundary"="administrative"]["admin_level"="2"]["ISO3166-1:alpha2"="'
-                . addslashes($code) . '"]->.c;';
-        } else {
-            $q = 'area["name"="' . addslashes($name)
-                . '"]["boundary"="administrative"]["admin_level"="2"]->.c;';
-        }
-        if ($state) {
-            $q .= 'area["name"="' . addslashes($state)
-                . '"]["boundary"="administrative"](area.c)->.s;';
-        }
+        // Luôn có country_code BR
+        $q = 'area["boundary"="administrative"]["admin_level"="2"]["ISO3166-1:alpha2"="BR"]->.c;';
+
+        // Thêm bang
+        $q .= 'area["name"="' . addslashes($state)
+            . '"]["boundary"="administrative"](area.c)->.s;';
+
         if ($city) {
-            $parent = $state ? 's' : 'c';
             $q .= 'area["name"="' . addslashes($city)
-                . '"]["boundary"="administrative"](area.' . $parent . ')->.t;';
+                . '"]["boundary"="administrative"](area.s)->.t;';
         } else {
-            $q .= ($state ? '.s->.t;' : '.c->.t;');
+            $q .= '.s->.t;';
         }
 
         return $q;
     }
 
-    /**
-     * Phải có street, housenumber và postcode
-     */
     private function hasBasicAddress(array $tags): bool
     {
-        return isset(
-            $tags['addr:street'],
-            $tags['addr:housenumber'],
-            $tags['addr:postcode']
-        );
+        return isset($tags['addr:street'], $tags['addr:housenumber'], $tags['addr:postcode']);
     }
 
     private function isResidential(array $tags): bool
@@ -156,16 +178,7 @@ class LocationController extends Controller
         $state = $stateRaw ? $this->normalizeState($stateRaw) : '';
         $postcode = $tags['addr:postcode'];
 
-        if (!empty($tags['addr:country'])) {
-            $code = strtoupper($tags['addr:country']);
-            try {
-                $country = Countries::getName($code, 'en');
-            } catch (\Throwable $e) {
-                $country = $code;
-            }
-        } else {
-            $country = $defaultCountryName;
-        }
+        $country = $defaultCountryName;
 
         $line1 = "{$street}, {$number}" . ($suburb ? " - {$suburb}" : '');
         $line2Parts = array_filter([$city, $state]);
@@ -194,3 +207,4 @@ class LocationController extends Controller
         ], $code);
     }
 }
+
