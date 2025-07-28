@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\NameGeneratorController;
+use App\Http\Controllers\PassportMrzController;
 use App\Http\Controllers\PasswordGeneratorController;
 use App\Http\Controllers\BirthdayController;
 use App\Http\Controllers\PassportController;
@@ -26,6 +27,9 @@ Route::post('/passports/generate', [PassportController::class, 'generatePassport
 
 // generate passport date routes
 Route::post('/passports/generate/date', [PassportController::class, 'generatePassportDate']);
+
+// generate passport mrz
+Route::post('/passport/generate/mrz', [PassportMrzController::class, 'generate']);
 
 // generate iban routes
 Route::post('/ibans/generate', [IbanController::class, 'generateIban']);
