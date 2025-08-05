@@ -25,24 +25,72 @@ class NameGeneratorController extends Controller
         'BR' => ['locale' => 'pt_BR', 'order' => 'F M L'],
     ];
 
-    /** Fallback dataset gọn nhẹ cho production (có thể mở rộng khi cần) */
     private array $dataset = [
         'en_US' => [
-            'male' => ['James', 'John', 'Robert', 'Michael', 'William'],
-            'female' => ['Mary', 'Patricia', 'Jennifer', 'Linda', 'Elizabeth'],
-            'last' => ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones'],
+            'male' => ['Liam', 'Noah', 'Oliver', 'Elijah', 'James', 'William', 'Benjamin', 'Lucas', 'Henry', 'Alexander'],
+            'female' => ['Olivia', 'Emma', 'Ava', 'Charlotte', 'Sophia', 'Amelia', 'Isabella', 'Mia', 'Evelyn', 'Harper'],
+            'last' => ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez'],
+        ],
+        'en_GB' => [
+            'male' => ['Muhammad', 'Noah', 'Oliver', 'Arthur', 'George', 'Leo', 'Oscar', 'Harry', 'Henry', 'Charlie'],
+            'female' => ['Olivia', 'Amelia', 'Isla', 'Ava', 'Ivy', 'Freya', 'Lily', 'Florence', 'Mia', 'Evie'],
+            'last' => ['Smith', 'Jones', 'Williams', 'Taylor', 'Brown', 'Davies', 'Evans', 'Thomas', 'Wilson', 'Johnson'],
         ],
         'vi_VN' => [
-            'male' => ['Anh', 'Bình', 'Cường', 'Dũng', 'Hải'],
-            'female' => ['Anh', 'Bích', 'Chi', 'Dung', 'Hà'],
-            'last' => ['Nguyễn', 'Trần', 'Lê', 'Phạm', 'Huỳnh'],
+            'male' => ['Anh', 'Minh', 'Dũng', 'Huy', 'Phong', 'Tuấn', 'Khang', 'Đạt', 'Bảo', 'Khánh'],
+            'female' => ['Anh', 'Linh', 'Ngọc', 'Trang', 'Phương', 'Mai', 'Thảo', 'Hà', 'Hương', 'Yến'],
+            'last' => ['Nguyễn', 'Trần', 'Lê', 'Phạm', 'Huỳnh', 'Hoàng', 'Phan', 'Vũ', 'Đặng', 'Bùi'],
         ],
-        // … thêm gói nhỏ cho các locale khác nếu cần
+        'de_DE' => [
+            'male' => ['Noah', 'Matteo', 'Elias', 'Luca', 'Leon', 'Theo', 'Finn', 'Paul', 'Emil', 'Henry'],
+            'female' => ['Emilia', 'Sophia', 'Emma', 'Hannah', 'Mia', 'Lina', 'Ella', 'Lia', 'Leni', 'Mila'],
+            'last' => ['Müller', 'Schmidt', 'Schneider', 'Fischer', 'Weber', 'Meyer', 'Wagner', 'Schulz', 'Becker', 'Hoffmann'],
+        ],
+        'fr_FR' => [
+            'male' => ['Lucas', 'Hugo', 'Gabriel', 'Louis', 'Arthur', 'Raphaël', 'Adam', 'Léo', 'Ethan', 'Nathan'],
+            'female' => ['Emma', 'Jade', 'Louise', 'Alice', 'Chloé', 'Lina', 'Rose', 'Anna', 'Léa', 'Léna'],
+            'last' => ['Martin', 'Bernard', 'Thomas', 'Petit', 'Robert', 'Richard', 'Durand', 'Dubois', 'Moreau', 'Laurent'],
+        ],
+        'ja_JP' => [
+            'male' => ['Haruto', 'Sōta', 'Yuto', 'Riku', 'Ren', 'Yuki', 'Sora', 'Kaito', 'Ryūsei', 'Yūma'],
+            'female' => ['Yui', 'Hina', 'Rin', 'Mio', 'Sakura', 'Tsumugi', 'Aoi', 'Miyu', 'Yuna', 'Hiyori'],
+            'last' => ['Satō', 'Suzuki', 'Takahashi', 'Tanaka', 'Watanabe', 'Itō', 'Yamamoto', 'Nakamura', 'Kobayashi', 'Katō'],
+        ],
+        'es_ES' => [
+            'male' => ['Martín', 'Hugo', 'Mateo', 'Lucas', 'Leo', 'Daniel', 'Alejandro', 'Pablo', 'Enzo', 'Manuel'],
+            'female' => ['Lucía', 'Sofía', 'Martina', 'Valeria', 'Julia', 'Paula', 'Alba', 'Emma', 'Sara', 'Carmen'],
+            'last' => ['García', 'Rodríguez', 'González', 'Fernández', 'López', 'Martínez', 'Sánchez', 'Pérez', 'Romero', 'Torres'],
+        ],
+        'it_IT' => [
+            'male' => ['Leonardo', 'Francesco', 'Alessandro', 'Lorenzo', 'Matteo', 'Tommaso', 'Edoardo', 'Gabriele', 'Riccardo', 'Andrea'],
+            'female' => ['Sofia', 'Giulia', 'Aurora', 'Ginevra', 'Alice', 'Beatrice', 'Emma', 'Vittoria', 'Martina', 'Chiara'],
+            'last' => ['Rossi', 'Russo', 'Ferrari', 'Esposito', 'Bianchi', 'Romano', 'Colombo', 'Ricci', 'Marino', 'Greco'],
+        ],
+        'ru_RU' => [
+            'male' => ['Mikhail', 'Alexander', 'Artem', 'Matvey', 'Maxim', 'Ivan', 'Dmitry', 'Nikita', 'Kirill', 'Yegor'],
+            'female' => ['Sofia', 'Anna', 'Maria', 'Eva', 'Victoria', 'Olga', 'Natalia', 'Elena', 'Daria', 'Polina'],
+            'last' => ['Ivanov', 'Smirnov', 'Kuznetsov', 'Popov', 'Volkov', 'Sokolov', 'Lebedev', 'Morozov', 'Petrov', 'Novikov'],
+        ],
+        'zh_CN' => [
+            'male' => ['Wei', 'Hao', 'Jun', 'Lei', 'Qiang', 'Ming', 'Peng', 'Jie', 'Chao', 'Bo'],
+            'female' => ['Fang', 'Li', 'Na', 'Jing', 'Yan', 'Xia', 'Ling', 'Mei', 'Ying', 'Hui'],
+            'last' => ['Wang', 'Li', 'Zhang', 'Liu', 'Chen', 'Yang', 'Huang', 'Zhao', 'Wu', 'Zhou'],
+        ],
+        'ko_KR' => [
+            'male' => ['Min-jun', 'Seo-jun', 'Ji-hoon', 'Hyun-woo', 'Jun-seo', 'Ha-joon', 'Ji-hu', 'Do-hyun', 'Joon-woo', 'Sung-min'],
+            'female' => ['Seo-yeon', 'Ji-woo', 'Ha-yoon', 'Ji-yoon', 'Soo-min', 'Seo-ah', 'I-seo', 'Arin', 'Harin', 'Ji-yu'],
+            'last' => ['Kim', 'Lee', 'Park', 'Choi', 'Jung', 'Kang', 'Cho', 'Yoon', 'Jang', 'Lim'],
+        ],
+        'pt_BR' => [
+            'male' => ['Miguel', 'Arthur', 'Heitor', 'Theo', 'Davi', 'Gabriel', 'Gael', 'Ravi', 'Benício', 'Samuel'],
+            'female' => ['Helena', 'Alice', 'Laura', 'Manuela', 'Isabella', 'Sophia', 'Valentina', 'Luna', 'Maria', 'Luiza'],
+            'last' => ['Silva', 'Santos', 'Oliveira', 'Souza', 'Pereira', 'Costa', 'Rodrigues', 'Almeida', 'Ribeiro', 'Ferreira'],
+        ],
     ];
 
     public function generateName(Request $request)
     {
-        /* 1️⃣ Validate */
+        /*  Validate */
         $validator = Validator::make($request->all(), [
             'name_number' => 'required|integer|min:1|max:100',
             'country' => 'string|size:2',
@@ -54,7 +102,7 @@ class NameGeneratorController extends Controller
             return $this->error($validator->errors()->first());
         }
 
-        /* 2️⃣ Extract opt */
+        /*  Extract opt */
         $total = (int) $request->input('name_number', 1);
         $countryCode = strtoupper($request->input('country', 'US'));
         $transAscii = $request->boolean('trans_ascii', false);
@@ -68,7 +116,7 @@ class NameGeneratorController extends Controller
             $order = trim(preg_replace('/\s+/', ' ', $order));
         }
 
-        /* 4️⃣ Tạo list tên */
+        /* Tạo list tên */
         $names = collect(range(1, $total))->map(function () use ($locale, $genderOpt, $order, $transAscii) {
             // Nếu Faker có sẵn: dùng Faker
             if (class_exists(\Faker\Factory::class)) {
