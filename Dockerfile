@@ -1,24 +1,23 @@
-FROM php:8.2-fpm
+FROM composer:2.7 as composer
+WORKDIR /app
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --optimize-autoloader --prefer-dist --no-interaction
+COPY . .
 
+FROM php:8.2-fpm-alpine
 WORKDIR /var/www
 
-RUN apt-get update && apt-get install -y \
-    zip unzip curl git libxml2-dev libzip-dev libpng-dev libjpeg-dev libonig-dev \
-    sqlite3 libsqlite3-dev && \
-    docker-php-ext-install pdo mbstring exif pcntl bcmath gd zip && \
-    apt-get clean
+RUN apk add --no-cache libpng libjpeg-turbo libzip-dev oniguruma-dev \
+    && docker-php-ext-install pdo_mysql mbstring bcmath zip exif gd
 
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+COPY --from=composer /app /var/www
 
-COPY . /var/www
-COPY --chown=www-data:www-data . /var/www
+RUN addgroup -g 1000 www && adduser -u 1000 -G www -s /bin/sh -D www \
+    && chown -R www:www /var/www
+USER www
 
-RUN chmod -R 755 /var/www && \
-    composer install --no-interaction --optimize-autoloader && \
-    cp .env.example .env && \
-    php artisan key:generate && \
-    php artisan config:clear && \
-    php artisan config:cache
+ENV APP_ENV=production \
+    PHP_OPCACHE_VALIDATE_TIMESTAMPS=0
 
-EXPOSE 8000
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+EXPOSE 9000
+CMD ["php-fpm"]
