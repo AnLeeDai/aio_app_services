@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
-use Faker\Factory as Faker;
 
 class NameGeneratorController extends Controller
 {
@@ -25,9 +25,24 @@ class NameGeneratorController extends Controller
         'BR' => ['locale' => 'pt_BR', 'order' => 'F M L'],
     ];
 
+    /** Fallback dataset gọn nhẹ cho production (có thể mở rộng khi cần) */
+    private array $dataset = [
+        'en_US' => [
+            'male' => ['James', 'John', 'Robert', 'Michael', 'William'],
+            'female' => ['Mary', 'Patricia', 'Jennifer', 'Linda', 'Elizabeth'],
+            'last' => ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones'],
+        ],
+        'vi_VN' => [
+            'male' => ['Anh', 'Bình', 'Cường', 'Dũng', 'Hải'],
+            'female' => ['Anh', 'Bích', 'Chi', 'Dung', 'Hà'],
+            'last' => ['Nguyễn', 'Trần', 'Lê', 'Phạm', 'Huỳnh'],
+        ],
+        // … thêm gói nhỏ cho các locale khác nếu cần
+    ];
+
     public function generateName(Request $request)
     {
-        // 1️⃣ Validate
+        /* 1️⃣ Validate */
         $validator = Validator::make($request->all(), [
             'name_number' => 'required|integer|min:1|max:100',
             'country' => 'string|size:2',
@@ -39,51 +54,66 @@ class NameGeneratorController extends Controller
             return $this->error($validator->errors()->first());
         }
 
-        // 2️⃣ Extract options
+        /* 2️⃣ Extract opt */
         $total = (int) $request->input('name_number', 1);
         $countryCode = strtoupper($request->input('country', 'US'));
         $transAscii = $request->boolean('trans_ascii', false);
         $genderOpt = $request->input('gender', 'random');
         $nameFormat = $request->input('name_format', 'first_middle_last');
 
-        // 3️⃣ Resolve locale & pattern
+        /* 3️⃣ Locale & order */
         [$locale, $order] = $this->resolveLocaleAndOrder($countryCode);
         if ($nameFormat === 'first_last') {
-            $order = str_replace('M', '', $order); // bỏ đệm
+            $order = str_replace('M', '', $order);
             $order = trim(preg_replace('/\s+/', ' ', $order));
         }
 
-        // 4️⃣ Faker instance (khởi tạo 1 lần)
-        $faker = Faker::create($locale);
+        /* 4️⃣ Tạo list tên */
+        $names = collect(range(1, $total))->map(function () use ($locale, $genderOpt, $order, $transAscii) {
+            // Nếu Faker có sẵn: dùng Faker
+            if (class_exists(\Faker\Factory::class)) {
+                $faker = \Faker\Factory::create($locale);
+                $gender = $genderOpt === 'random'
+                    ? $faker->randomElement(['male', 'female'])
+                    : $genderOpt;
 
-        // 5️⃣ Generate
-        $names = collect(range(1, $total))->map(function () use ($faker, $genderOpt, $order, $transAscii) {
-            // Giới tính cụ thể hoặc random
-            $gender = $genderOpt === 'random' ? $faker->randomElement(['male', 'female']) : $genderOpt;
-
-            $first = $gender === 'male' ? $faker->firstNameMale : $faker->firstNameFemale;
-            $middle = '';
-            if (str_contains($order, 'M')) {
-                do {
-                    $middle = $gender === 'male' ? $faker->firstNameMale : $faker->firstNameFemale;
-                } while ($middle === $first);
+                $first = $gender === 'male' ? $faker->firstNameMale : $faker->firstNameFemale;
+                $middle = '';
+                if (str_contains($order, 'M')) {
+                    do {
+                        $middle = $gender === 'male' ? $faker->firstNameMale : $faker->firstNameFemale;
+                    } while ($middle === $first);
+                }
+                $last = $faker->lastName;
             }
-            $last = $faker->lastName;
+            // Nếu KHÔNG có Faker: dùng dataset fallback
+            else {
+                $data = $this->dataset[$locale] ?? $this->dataset['en_US'];
+                $gender = $genderOpt === 'random'
+                    ? Arr::random(['male', 'female'])
+                    : $genderOpt;
 
-            // Ghép
+                $first = Arr::random($data[$gender]);
+                $middle = '';
+                if (str_contains($order, 'M')) {
+                    do {
+                        $middle = Arr::random($data[$gender]);
+                    } while ($middle === $first);
+                }
+                $last = Arr::random($data['last']);
+            }
+
+            // Ghép theo order
             $tokens = ['F' => $first, 'M' => $middle, 'L' => $last];
             $full = collect(str_split(str_replace(' ', '', $order)))
                 ->map(fn($t) => $tokens[$t] ?? '')
                 ->filter()
                 ->implode(' ');
 
-            if ($transAscii) {
-                $full = Str::ascii($full);
-            }
-            return $full;
+            return $transAscii ? Str::ascii($full) : $full;
         })->all();
 
-        // 6️⃣ Output
+        /* 5️⃣ Output */
         return response()->json([
             'status' => 'success',
             'message' => 'Tạo thành công ' . count($names) . ' tên ' . $countryCode,
@@ -92,13 +122,11 @@ class NameGeneratorController extends Controller
         ]);
     }
 
-    /* --------- Helpers --------- */
-
+    /* ------ helpers giữ nguyên ------ */
     private function resolveLocaleAndOrder(string $country): array
     {
-        if (!isset(self::LOCALE_MAP[$country])) {
+        if (!isset(self::LOCALE_MAP[$country]))
             $country = 'US';
-        }
         $info = self::LOCALE_MAP[$country];
         return [$info['locale'], $info['order']];
     }
