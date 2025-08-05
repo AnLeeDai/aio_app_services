@@ -1,24 +1,21 @@
-FROM php:8.2-fpm
+FROM richarvey/nginx-php-fpm:latest
 
-WORKDIR /var/www
+COPY . .
 
-RUN apt-get update && apt-get install -y \
-    zip unzip curl git libxml2-dev libzip-dev libpng-dev libjpeg-dev libonig-dev \
-    sqlite3 libsqlite3-dev && \
-    docker-php-ext-install pdo mbstring exif pcntl bcmath gd zip && \
-    apt-get clean
+# Image config
+ENV SKIP_COMPOSER 1
+ENV WEBROOT /var/www/html/public
+ENV PHP_ERRORS_STDERR 1
+ENV RUN_SCRIPTS 1
+ENV REAL_IP_HEADER 1
 
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+# Laravel config
+ENV APP_ENV production
+ENV APP_DEBUG false
+ENV LOG_CHANNEL stderr
 
-COPY . /var/www
-COPY --chown=www-data:www-data . /var/www
 
-RUN chmod -R 755 /var/www && \
-    composer install --no-interaction --optimize-autoloader && \
-    cp .env.example .env && \
-    php artisan key:generate && \
-    php artisan config:clear && \
-    php artisan config:cache
+# Allow composer to run as root
+ENV COMPOSER_ALLOW_SUPERUSER 1
 
-EXPOSE 8000
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+CMD ["/start.sh"]
