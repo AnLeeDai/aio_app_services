@@ -48,12 +48,14 @@ class PassportController extends Controller
         Validator::make($request->all(), [
             'date_number' => 'required|integer|min:1|max:100',
             'country' => 'required|string|in:US,BR',
-            'format' => 'sometimes|string|in:Y-m-d,d/m/Y,d-m-Y,m/d/Y',
+            // Đầu ra sẽ luôn d/m/Y nên không cần nhiều lựa chọn
+            'format' => 'sometimes|string|in:d/m/Y',
         ])->validate();
 
         $total = (int) $request->input('date_number');
         $country = strtoupper($request->input('country'));
-        $formatOut = $request->input('format', 'Y-m-d');
+        // Bắt buộc dùng dd/mm/YYYY theo yêu cầu
+        $formatOut = 'd/m/Y';
         $validYrs = $this->getValidityYears($country);
 
         // 1. Muộn nhất để passport còn ít nhất 2 ngày hiệu lực
