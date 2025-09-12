@@ -116,11 +116,19 @@ class NameGeneratorController extends Controller
             $order = trim(preg_replace('/\s+/', ' ', $order));
         }
 
-        /* Tạo list tên */
-        $names = collect(range(1, $total))->map(function () use ($locale, $genderOpt, $order, $transAscii) {
-            // Nếu Faker có sẵn: dùng Faker
-            if (class_exists(\Faker\Factory::class)) {
-                $faker = \Faker\Factory::create($locale);
+        /* Tạo list tên duy nhất bằng Faker (fallback dataset nếu thiếu) */
+        $faker = class_exists(\Faker\Factory::class) ? \Faker\Factory::create($locale) : null;
+        $data = $this->dataset[$locale] ?? $this->dataset['en_US'];
+
+        $names = [];
+        $seen = [];
+        $attempts = 0;
+        $maxAttempts = max(100, $total * 20); // giới hạn an toàn tránh vòng lặp vô hạn
+
+        while (count($names) < $total && $attempts < $maxAttempts) {
+            $attempts++;
+
+            if ($faker) {
                 $gender = $genderOpt === 'random'
                     ? $faker->randomElement(['male', 'female'])
                     : $genderOpt;
@@ -128,15 +136,13 @@ class NameGeneratorController extends Controller
                 $first = $gender === 'male' ? $faker->firstNameMale : $faker->firstNameFemale;
                 $middle = '';
                 if (str_contains($order, 'M')) {
+                    // tránh trùng với first
                     do {
                         $middle = $gender === 'male' ? $faker->firstNameMale : $faker->firstNameFemale;
                     } while ($middle === $first);
                 }
                 $last = $faker->lastName;
-            }
-            // Nếu KHÔNG có Faker: dùng dataset fallback
-            else {
-                $data = $this->dataset[$locale] ?? $this->dataset['en_US'];
+            } else {
                 $gender = $genderOpt === 'random'
                     ? Arr::random(['male', 'female'])
                     : $genderOpt;
@@ -158,8 +164,17 @@ class NameGeneratorController extends Controller
                 ->filter()
                 ->implode(' ');
 
-            return $transAscii ? Str::ascii($full) : $full;
-        })->all();
+            $final = $transAscii ? Str::ascii($full) : $full;
+
+            if (!isset($seen[$final])) {
+                $seen[$final] = true;
+                $names[] = $final;
+            }
+        }
+
+        if (count($names) < $total) {
+            return $this->error('Không tạo đủ tên duy nhất. Vui lòng giảm số lượng hoặc đổi tuỳ chọn.');
+        }
 
         /* 5️⃣ Output */
         return response()->json([
