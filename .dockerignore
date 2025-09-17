@@ -1,0 +1,38 @@
+# Node
+node_modules
+npm-debug.log*
+yarn.lock
+pnpm-lock.yaml
+
+# Composer
+vendor
+
+# Laravel runtime/cache
+storage/*.key
+storage/logs
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/testing/*
+storage/framework/views/*
+bootstrap/cache/*.php
+
+# Env and VCS
+.env
+.env.*
+!.env.example
+.git
+.gitignore
+.gitattributes
+
+# IDE/editor
+.vscode
+.idea
+*.swp
+*.swo
+
+# Docker
+.dockerignore
+
+# Misc
+coverage
+.phpunit.result.cache
