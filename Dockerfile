@@ -11,6 +11,8 @@ RUN set -eux; \
         libzip-dev \
         libonig-dev \
         zlib1g-dev \
+        nginx \
+        gettext-base \
     ; \
     docker-php-ext-configure zip; \
     docker-php-ext-install -j"$(nproc)" mbstring zip; \
@@ -18,6 +20,9 @@ RUN set -eux; \
 
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+ENV COMPOSER_ALLOW_SUPERUSER=1
+ENV PORT=8080
+ENV ENABLE_NGINX=1
 # Allow Composer to run as root (inside container)
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
@@ -36,5 +41,13 @@ COPY . .
 # Run composer again to execute scripts now that app code is present
 RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
-CMD ["php-fpm"]
-EXPOSE 9000
+# Copy nginx template and entrypoint
+COPY conf/nginx/nginx-site.template /etc/nginx/templates/default.conf.template
+COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Expose FPM and HTTP ports
+EXPOSE 9000 8080
+
+# Start via entrypoint (runs nginx + php-fpm when ENABLE_NGINX=1)
+CMD ["/usr/local/bin/entrypoint.sh"]
