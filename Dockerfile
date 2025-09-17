@@ -21,7 +21,7 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 # Allow Composer to run as root (inside container)
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
-WORKDIR /var/www
+WORKDIR /var/www/html
 
 # Leverage build cache: install PHP dependencies first
 COPY composer.json composer.lock ./
@@ -37,3 +37,4 @@ COPY . .
 RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
 CMD ["php-fpm"]
+EXPOSE 9000
