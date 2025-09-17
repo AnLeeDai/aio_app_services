@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Validator;
@@ -9,6 +10,8 @@ use Carbon\Carbon;
 
 class PassportController extends Controller
 {
+    use ApiResponse;
+
     /* Hai quốc gia hỗ trợ */
     private const LOCALE_MAP = [
         'US' => ['locale' => 'en_US', 'order' => 'F M L'],
@@ -24,7 +27,7 @@ class PassportController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return $this->error($validator->errors()->first());
+            return $this->validationError($validator->errors()->first(), $validator->errors());
         }
 
         $total = (int) $request->input('id_number');
@@ -35,11 +38,7 @@ class PassportController extends Controller
             ->map(fn() => $this->generateNumberForCountry($countryCode, $prefix))
             ->all();
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Tạo thành công ' . count($ids) . ' passport ID ' . $countryCode,
-            'data' => $ids,
-        ]);
+        return $this->success($ids, 'Tạo thành công ' . count($ids) . ' passport ID ' . $countryCode);
     }
 
     /* ---------- Sinh (issue_date, expiry_date) ---------- */
@@ -84,11 +83,7 @@ class PassportController extends Controller
             ];
         })->all();
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Tạo thành công ' . count($pairs) . ' cặp ngày passport',
-            'data' => $pairs,
-        ]);
+        return $this->success($pairs, 'Tạo thành công ' . count($pairs) . ' cặp ngày passport');
     }
 
     /* ---------- Helpers ---------- */
@@ -132,13 +127,5 @@ class PassportController extends Controller
     private function getValidityYears(string $country): int
     {
         return 10;
-    }
-
-    private function error(string $msg)
-    {
-        return response()->json([
-            'status' => 'error',
-            'message' => $msg,
-        ], 422);
     }
 }

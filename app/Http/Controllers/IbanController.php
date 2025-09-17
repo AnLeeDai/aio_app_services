@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Validator;
 
 class IbanController extends Controller
 {
+    use ApiResponse;
+
     /* ---------- Endpoint ---------- */
     public function generateIban(Request $request)
     {
@@ -17,7 +20,7 @@ class IbanController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return $this->error($validator->errors()->first());
+            return $this->validationError($validator->errors()->first(), $validator->errors());
         }
 
         $total = (int) $request->input('iban_number');
@@ -30,11 +33,7 @@ class IbanController extends Controller
             }
         }
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Tạo thành công ' . count($ibans) . ' IBAN BR',
-            'data' => $ibans,
-        ]);
+        return $this->success($ibans, 'Tạo thành công ' . count($ibans) . ' IBAN BR');
     }
 
     /* ---------- Generator ---------- */

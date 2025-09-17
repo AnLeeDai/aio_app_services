@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Validator;
 
 class PasswordGeneratorController extends Controller
 {
+    use ApiResponse;
+
     public function generatePassword(Request $request)
     {
         /* 1. Validate đầu vào */
@@ -19,10 +22,7 @@ class PasswordGeneratorController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => $validator->errors()->first(),
-            ], 422);
+            return $this->validationError($validator->errors()->first(), $validator->errors());
         }
 
         /* 2. Lấy tuỳ chọn */
@@ -82,10 +82,6 @@ class PasswordGeneratorController extends Controller
         }
 
         /* 5. Trả kết quả */
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Tạo thành công ' . count($results) . ' mật khẩu',
-            'data' => $results,
-        ]);
+        return $this->success($results, 'Tạo thành công ' . count($results) . ' mật khẩu');
     }
 }

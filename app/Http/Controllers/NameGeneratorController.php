@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Validator;
@@ -10,6 +11,8 @@ use Illuminate\Support\Str;
 
 class NameGeneratorController extends Controller
 {
+    use ApiResponse;
+
     private const LOCALE_MAP = [
         'US' => ['locale' => 'en_US', 'order' => 'F M L'],
         'UK' => ['locale' => 'en_GB', 'order' => 'F M L'],
@@ -82,12 +85,45 @@ class NameGeneratorController extends Controller
             'last' => ['Kim', 'Lee', 'Park', 'Choi', 'Jung', 'Kang', 'Cho', 'Yoon', 'Jang', 'Lim'],
         ],
         'pt_BR' => [
-            'male' => ['Miguel', 'Arthur', 'Heitor', 'Theo', 'Davi', 'Gabriel', 'Gael', 'Ravi', 'Benício', 'Samuel'],
-            'female' => ['Helena', 'Alice', 'Laura', 'Manuela', 'Isabella', 'Sophia', 'Valentina', 'Luna', 'Maria', 'Luiza'],
-            'last' => ['Silva', 'Santos', 'Oliveira', 'Souza', 'Pereira', 'Costa', 'Rodrigues', 'Almeida', 'Ribeiro', 'Ferreira'],
+            'male' => [
+                'Miguel', 'Arthur', 'Heitor', 'Theo', 'Davi', 'Gabriel', 'Gael', 'Ravi', 'Benício', 'Samuel',
+                'Pedro', 'João', 'Bernardo', 'Lucas', 'Matheus', 'Enzo', 'Henrique', 'Gustavo', 'Lorenzo', 'Rafael',
+                'Daniel', 'Eduardo', 'Caio', 'Thiago', 'Luiz', 'Guilherme', 'Vinícius', 'Felipe', 'Isaac', 'Nicolas',
+                'Antônio', 'Carlos', 'Bruno', 'Fernando', 'Rodrigo', 'Marcelo', 'André', 'Vítor', 'Yuri', 'Pietro',
+                'Raul', 'Danilo', 'Murilo', 'Diego', 'Ícaro', 'Otávio', 'Alex', 'Alexandre', 'Vicente', 'Nathan',
+                'Bento', 'Igor', 'Luan', 'Kevin', 'Leandro', 'Marcos', 'Márcio', 'Jorge', 'Wellington', 'Álvaro',
+                'Alisson', 'Cristian', 'Fábio', 'Jonathan', 'Wallace', 'Ruan', 'José', 'Elias', 'Estevão', 'Emerson',
+                'Everton', 'Fabrício', 'Giovani', 'Hugo', 'Iago', 'Jonas', 'Kauê', 'Leonardo', 'Máximo', 'Mateus',
+                'Moisés', 'Nilson', 'Paulo', 'Renan', 'Renato', 'Ricardo', 'Roberto', 'Rômulo', 'Sérgio', 'Tiago',
+                'Túlio', 'Victor', 'William', 'Yago', 'Ygor', 'Caíque', 'Enrico', 'Caetano', 'Silas', 'Orlando',
+            ],
+            'female' => [
+                'Helena', 'Alice', 'Laura', 'Manuela', 'Isabella', 'Sophia', 'Valentina', 'Luna', 'Maria', 'Luiza',
+                'Ana', 'Júlia', 'Beatriz', 'Mariana', 'Gabriela', 'Rafaela', 'Giovana', 'Vitória', 'Camila', 'Letícia',
+                'Heloísa', 'Cecília', 'Isabel', 'Lívia', 'Larissa', 'Nicole', 'Sarah', 'Elisa', 'Esther', 'Rebeca',
+                'Bianca', 'Clara', 'Carolina', 'Fernanda', 'Eduarda', 'Natália', 'Yasmin', 'Bruna', 'Patrícia', 'Aline',
+                'Amanda', 'Daniela', 'Simone', 'Priscila', 'Sabrina', 'Tainá', 'Taís', 'Tatiane', 'Renata', 'Juliana',
+                'Joana', 'Antônia', 'Clarice', 'Catarina', 'Sílvia', 'Débora', 'Mônica', 'Tereza', 'Noêmia', 'Eliane',
+                'Elaine', 'Cristiane', 'Adriana', 'Isadora', 'Lorena', 'Mirela', 'Mirella', 'Milena', 'Melissa', 'Pietra',
+                'Paola', 'Paula', 'Paloma', 'Pâmela', 'Bárbara', 'Carla', 'Karina', 'Clarissa', 'Daniella', 'Janaína',
+                'Laila', 'Laís', 'Marcela', 'Márcia', 'Maysa', 'Melina', 'Nádia', 'Nathalia', 'Nayara', 'Olivia',
+                'Priscilla', 'Rafaella', 'Raissa', 'Sofia', 'Stefany', 'Talita', 'Thayná', 'Vanessa', 'Verônica', 'Yara',
+            ],
+            'last' => [
+                'Silva', 'Santos', 'Oliveira', 'Souza', 'Pereira', 'Costa', 'Rodrigues', 'Almeida', 'Ribeiro', 'Ferreira',
+                'Carvalho', 'Gomes', 'Martins', 'Araújo', 'Melo', 'Castro', 'Barros', 'Pinto', 'Cardoso', 'Teixeira',
+                'Moreira', 'Correia', 'Dias', 'Campos', 'Vieira', 'Monteiro', 'Moura', 'Nunes', 'Marques', 'Machado',
+                'Lopes', 'Freitas', 'Lima', 'Fonseca', 'Batista', 'Ramos', 'Rocha', 'Duarte', 'Farias', 'Cavalcanti',
+                'Assis', 'Tavares', 'Pires', 'Coutinho', 'Barreto', 'Moraes', 'Xavier', 'Braga', 'Figueiredo', 'Brito',
+                'Santiago', 'Coelho', 'Camargo', 'Guimarães', 'Peixoto', 'Amorim', 'Paiva', 'Freire', 'Rezende', 'Mota',
+                'Dantas', 'Mesquita', 'Siqueira', 'Valente', 'Dutra', 'Leitão', 'Sales', 'Queiroz', 'Viana', 'Soares',
+                'Barroso', 'Pacheco', 'Cunha', 'Nogueira', 'Teles', 'Aguiar', 'Portela', 'Gouveia', 'Luz', 'Maia',
+                'Mattos', 'Mendonça', 'Prado', 'Quintana', 'Rangel', 'Salgado', 'Cardozo', 'Vilela', 'Sampaio', 'Silveira',
+                'Pinheiro', 'Bittencourt', 'Lira', 'Leite', 'Nascimento', 'Pimenta', 'Torres', 'Macedo', 'Medeiros', 'Borges',
+            ],
         ],
     ];
-
+    
     public function generateName(Request $request)
     {
         /*  Validate */
@@ -177,12 +213,7 @@ class NameGeneratorController extends Controller
         }
 
         /* 5️⃣ Output */
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Tạo thành công ' . count($names) . ' tên ' . $countryCode,
-            'country' => $countryCode,
-            'data' => $names,
-        ]);
+        return $this->success($names, 'Tạo thành công ' . count($names) . ' tên ' . $countryCode, 200);
     }
 
     /* ------ helpers giữ nguyên ------ */
@@ -192,13 +223,5 @@ class NameGeneratorController extends Controller
             $country = 'US';
         $info = self::LOCALE_MAP[$country];
         return [$info['locale'], $info['order']];
-    }
-
-    private function error(string $msg)
-    {
-        return response()->json([
-            'status' => 'error',
-            'message' => $msg,
-        ], 422);
     }
 }

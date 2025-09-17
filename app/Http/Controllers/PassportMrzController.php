@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Validator;
@@ -9,6 +10,8 @@ use Carbon\Carbon;
 
 class PassportMrzController extends Controller
 {
+    use ApiResponse;
+
     /**
      * Nhận dữ liệu đầu vào và trả về MRZ (Machine Readable Zone)
      *
@@ -46,7 +49,7 @@ class PassportMrzController extends Controller
 
         $v = Validator::make($rows, $rules);
         if ($v->fails()) {
-            return response()->json(['errors' => $v->errors()], 422);
+            return $this->validationError('Validation failed', $v->errors());
         }
         $rows = $v->validated();
 
@@ -58,7 +61,7 @@ class PassportMrzController extends Controller
                 'mrz' => $this->buildMrz($row),
             ];
         }
-        return response()->json($out);
+        return $this->success($out, 'Tạo thành công ' . count($out) . ' MRZ');
     }
 
     /* ========== Các Hàm Hỗ Trợ ========== */
