@@ -1,21 +1,19 @@
-FROM richarvey/nginx-php-fpm:latest
+FROM php:8.2-fpm
 
+# Install minimal dependencies (skip DB drivers)
+RUN apt-get update && apt-get install -y \
+    git curl unzip libzip-dev zip \
+    && docker-php-ext-install mbstring zip
+
+# Install Composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+WORKDIR /var/www
+
+# Copy app files
 COPY . .
 
-# Image config
-ENV SKIP_COMPOSER 1
-ENV WEBROOT /var/www/html/public
-ENV PHP_ERRORS_STDERR 1
-ENV RUN_SCRIPTS 1
-ENV REAL_IP_HEADER 1
+# Install PHP dependencies
+RUN composer install --no-dev --optimize-autoloader
 
-# Laravel config
-ENV APP_ENV production
-ENV APP_DEBUG false
-ENV LOG_CHANNEL stderr
-
-
-# Allow composer to run as root
-ENV COMPOSER_ALLOW_SUPERUSER 1
-
-CMD ["/start.sh"]
+CMD ["php-fpm"]

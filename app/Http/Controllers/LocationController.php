@@ -12,41 +12,70 @@ use Symfony\Component\HttpFoundation\Response;
 class LocationController extends Controller
 {
     /**
-     * Danh sách tất cả bang của Brazil (26 + Distrito Federal)
+     * Cấu hình quốc gia hỗ trợ: ISO code, tên chuẩn, alias và danh sách bang/tỉnh
      */
-    private array $brStates = [
-        // Vùng Bắc
-        'Acre',
-        'Amapá',
-        'Amazonas',
-        'Pará',
-        'Rondônia',
-        'Roraima',
-        'Tocantins',
-        // Vùng Đông Bắc
-        'Alagoas',
-        'Bahia',
-        'Ceará',
-        'Maranhão',
-        'Paraíba',
-        'Pernambuco',
-        'Piauí',
-        'Rio Grande do Norte',
-        'Sergipe',
-        // Vùng Trung Tây
-        'Goiás',
-        'Mato Grosso',
-        'Mato Grosso do Sul',
-        'Distrito Federal',
-        // Vùng Đông Nam
-        'Espírito Santo',
-        'Minas Gerais',
-        'Rio de Janeiro',
-        'São Paulo',
-        // Vùng Nam
-        'Paraná',
-        'Rio Grande do Sul',
-        'Santa Catarina',
+    private array $countryConfigs = [
+        // Brazil (BR)
+        'BR' => [
+            'name' => 'Brazil',
+            'aliases' => ['Brazil', 'Brasil', 'BR'],
+            'states' => [
+                'Acre', 'Amapá', 'Amazonas', 'Pará', 'Rondônia', 'Roraima', 'Tocantins',
+                'Alagoas', 'Bahia', 'Ceará', 'Maranhão', 'Paraíba', 'Pernambuco', 'Piauí', 'Rio Grande do Norte', 'Sergipe',
+                'Goiás', 'Mato Grosso', 'Mato Grosso do Sul', 'Distrito Federal',
+                'Espírito Santo', 'Minas Gerais', 'Rio de Janeiro', 'São Paulo',
+                'Paraná', 'Rio Grande do Sul', 'Santa Catarina',
+            ],
+        ],
+        // Peru (PE)
+        'PE' => [
+            'name' => 'Peru',
+            'aliases' => ['Peru', 'Perú', 'PE'],
+            'states' => [
+                'Amazonas', 'Áncash', 'Apurímac', 'Arequipa', 'Ayacucho', 'Cajamarca', 'Callao', 'Cusco',
+                'Huancavelica', 'Huánuco', 'Ica', 'Junín', 'La Libertad', 'Lambayeque', 'Lima', 'Loreto',
+                'Madre de Dios', 'Moquegua', 'Pasco', 'Piura', 'Puno', 'San Martín', 'Tacna', 'Tumbes', 'Ucayali',
+            ],
+        ],
+        // Malaysia (MY)
+        'MY' => [
+            'name' => 'Malaysia',
+            'aliases' => ['Malaysia', 'MY'],
+            'states' => [
+                'Johor', 'Kedah', 'Kelantan', 'Melaka', 'Negeri Sembilan', 'Pahang', 'Pulau Pinang',
+                'Perak', 'Perlis', 'Sabah', 'Sarawak', 'Selangor', 'Terengganu', 'Kuala Lumpur', 'Putrajaya', 'Labuan',
+            ],
+        ],
+        // Colombia (CO)
+        'CO' => [
+            'name' => 'Colombia',
+            'aliases' => ['Colombia', 'CO'],
+            'states' => [
+                'Amazonas', 'Antioquia', 'Arauca', 'Atlántico', 'Bolívar', 'Boyacá', 'Caldas', 'Caquetá', 'Casanare',
+                'Cauca', 'Cesar', 'Chocó', 'Córdoba', 'Cundinamarca', 'Bogotá D.C.', 'Guainía', 'Guaviare', 'Huila',
+                'La Guajira', 'Magdalena', 'Meta', 'Nariño', 'Norte de Santander', 'Putumayo', 'Quindío', 'Risaralda',
+                'San Andrés y Providencia', 'Santander', 'Sucre', 'Tolima', 'Valle del Cauca', 'Vaupés', 'Vichada',
+            ],
+        ],
+        // Jamaica (JM)
+        'JM' => [
+            'name' => 'Jamaica',
+            'aliases' => ['Jamaica', 'JM'],
+            'states' => [
+                'Kingston', 'St. Andrew', 'St. Thomas', 'Portland', 'St. Mary', 'St. Ann', 'Trelawny', 'St. James',
+                'Hanover', 'Westmoreland', 'St. Elizabeth', 'Manchester', 'Clarendon', 'St. Catherine',
+            ],
+        ],
+        // Chile (CL)
+        'CL' => [
+            'name' => 'Chile',
+            'aliases' => ['Chile', 'CL'],
+            'states' => [
+                'Arica y Parinacota', 'Tarapacá', 'Antofagasta', 'Atacama', 'Coquimbo', 'Valparaíso',
+                'Región Metropolitana de Santiago', "Libertador General Bernardo O'Higgins", 'Maule', 'Ñuble', 'Biobío',
+                'La Araucanía', 'Los Ríos', 'Los Lagos', 'Aysén', 'Magallanes y de la Antártica Chilena',
+            ],
+        ],
     ];
 
     public function generateAddresses(Request $request)
@@ -58,6 +87,7 @@ class LocationController extends Controller
          |   Chỉ còn country_code / country tùy chọn; state tùy chọn
          |-------------------------------------------------------------*/
         Validator::make($request->all(), [
+            'country' => 'required|string|max:100',
             'state' => 'sometimes|string|max:100',
             'city' => 'sometimes|string|max:100',
             'limit' => 'required|integer|min:1|max:100',
@@ -65,24 +95,29 @@ class LocationController extends Controller
         ])->validate();
 
         /* -------------------------------------------------------------
-         | 2‒ Fix country = Brazil (BR) & đọc tham số
+         | 2‒ Đọc tham số quốc gia, ánh xạ ISO code, chọn bang nếu cần
          |-------------------------------------------------------------*/
-        $countryCode = 'BR';
-        $countryName = 'Brazil';
+        $countryInput = trim($request->input('country'));
+        [$countryCode, $countryName] = $this->resolveCountry($countryInput);
+        if (!$countryCode) {
+            return $this->error('Quốc gia không được hỗ trợ. Hỗ trợ: Brazil, Paraguay, Peru, Malaysia, Colombia, Jamaica, Chile.', Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
         $state = $request->input('state');
         $city = $request->input('city');        // vẫn cho phép lọc city
         $limit = (int) $request->input('limit');
         $transAscii = $request->boolean('trans_ascii', false);
 
-        // Tự chọn bang ngẫu nhiên nếu không truyền
-        if (empty($state)) {
-            $state = $this->brStates[array_rand($this->brStates)];
+        // Tự chọn bang/tỉnh ngẫu nhiên nếu không truyền
+        if (empty($state) && !empty($this->countryConfigs[$countryCode]['states'])) {
+            $list = $this->countryConfigs[$countryCode]['states'];
+            $state = $list[array_rand($list)];
         }
 
         /* -------------------------------------------------------------
          | 3‒ Build Overpass area query
          |-------------------------------------------------------------*/
-        $areaQuery = $this->buildAreaQuery($countryCode, null, $state, $city);
+    $areaQuery = $this->buildAreaQuery($countryCode, $countryName, $state, $city);
 
         /* -------------------------------------------------------------
          | 4‒ Lấy hoặc tạo dữ liệu
@@ -129,8 +164,10 @@ class LocationController extends Controller
          |-------------------------------------------------------------*/
         return response()->json([
             'status' => 'success',
-            'message' => "Tạo thành công {$data->count()} địa chỉ nhà dân (bang {$state})",
+            'message' => "Tạo thành công {$data->count()} địa chỉ nhà dân",
             'trans_ascii' => $transAscii,
+            'country' => $countryName,
+            'country_code' => $countryCode,
             'state' => $state,
             'data' => $data,
         ]);
@@ -141,16 +178,23 @@ class LocationController extends Controller
      |=============================================================*/
     private function buildAreaQuery(?string $code, ?string $name, ?string $state, ?string $city): string
     {
-        // Luôn có country_code BR
-        $q = 'area["boundary"="administrative"]["admin_level"="2"]["ISO3166-1:alpha2"="BR"]->.c;';
+        // Country area theo ISO hoặc theo tên
+        if ($code) {
+            $q = 'area["boundary"="administrative"]["admin_level"="2"]["ISO3166-1:alpha2"="' . addslashes($code) . '"]->.c;';
+        } else {
+            $q = 'area["boundary"="administrative"]["admin_level"="2"]["name"="' . addslashes((string) $name) . '"]->.c;';
+        }
 
-        // Thêm bang
-        $q .= 'area["name"="' . addslashes($state)
-            . '"]["boundary"="administrative"](area.c)->.s;';
+        // Tên bang/tỉnh nếu có; không ép admin_level cụ thể vì mỗi nước khác nhau
+        if ($state) {
+            $q .= 'area["name"="' . addslashes($state) . '"]["boundary"="administrative"](area.c)->.s;';
+        } else {
+            // Không truyền state: dùng cả country area làm scope s
+            $q .= '.c->.s;';
+        }
 
         if ($city) {
-            $q .= 'area["name"="' . addslashes($city)
-                . '"]["boundary"="administrative"](area.s)->.t;';
+            $q .= 'area["name"="' . addslashes($city) . '"]["boundary"="administrative"](area.s)->.t;';
         } else {
             $q .= '.s->.t;';
         }
@@ -160,7 +204,8 @@ class LocationController extends Controller
 
     private function hasBasicAddress(array $tags): bool
     {
-        return isset($tags['addr:street'], $tags['addr:housenumber'], $tags['addr:postcode']);
+        // postcode có thể thiếu ở nhiều nước
+        return isset($tags['addr:street'], $tags['addr:housenumber']);
     }
 
     private function isResidential(array $tags): bool
@@ -176,9 +221,9 @@ class LocationController extends Controller
         $city = $tags['addr:city'] ?? $tags['addr:town'] ?? $tags['addr:place'] ?? '';
         $stateRaw = $tags['addr:state'] ?? $tags['addr:province'] ?? $tags['addr:region'] ?? '';
         $state = $stateRaw ? $this->normalizeState($stateRaw) : '';
-        $postcode = $tags['addr:postcode'];
+        $postcode = $tags['addr:postcode'] ?? null;
 
-        $country = $defaultCountryName;
+        $country = $tags['addr:country'] ?? $defaultCountryName;
 
         $line1 = "{$street}, {$number}" . ($suburb ? " - {$suburb}" : '');
         $line2Parts = array_filter([$city, $state]);
@@ -186,6 +231,24 @@ class LocationController extends Controller
         $parts = array_filter([$line1, $line2, $postcode, $country]);
 
         return implode(', ', $parts);
+    }
+
+    private function resolveCountry(string $input): array
+    {
+        $needle = mb_strtolower(trim($input));
+
+        foreach ($this->countryConfigs as $code => $conf) {
+            if (mb_strtolower($code) === $needle) {
+                return [$code, $conf['name']];
+            }
+            foreach ($conf['aliases'] as $alias) {
+                if (mb_strtolower($alias) === $needle) {
+                    return [$code, $conf['name']];
+                }
+            }
+        }
+
+        return [null, null];
     }
 
     private function normalizeState(string $state): string
