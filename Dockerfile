@@ -18,14 +18,22 @@ RUN set -eux; \
 
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+# Allow Composer to run as root (inside container)
+ENV COMPOSER_ALLOW_SUPERUSER=1
 
 WORKDIR /var/www
 
 # Leverage build cache: install PHP dependencies first
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+# If composer.lock is out of sync with composer.json, fall back to update
+RUN set -eux; \
+    composer install --no-dev --no-scripts --optimize-autoloader --no-interaction --prefer-dist \
+    || composer update --no-dev --no-scripts --no-interaction --prefer-dist
 
 # Then copy the rest of the application code
 COPY . .
+
+# Run composer again to execute scripts now that app code is present
+RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
 CMD ["php-fpm"]
