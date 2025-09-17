@@ -5,14 +5,18 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class NameGenerator extends Model
+class Password extends Model
 {
     use HasFactory;
 
-    protected $table = 'names';
+    protected $table = 'passwords';
 
     protected $fillable = [
-        'full_name',
+        'plain_password',
+    ];
+
+    protected $hidden = [
+        'plain_password',
     ];
 
     public const UPDATED_AT = null;

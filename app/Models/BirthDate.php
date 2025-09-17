@@ -5,14 +5,18 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class NameGenerator extends Model
+class BirthDate extends Model
 {
     use HasFactory;
 
-    protected $table = 'names';
+    protected $table = 'birth_dates';
 
     protected $fillable = [
-        'full_name',
+        'date_of_birth',
+    ];
+
+    protected $casts = [
+        'date_of_birth' => 'date',
     ];
 
     public const UPDATED_AT = null;

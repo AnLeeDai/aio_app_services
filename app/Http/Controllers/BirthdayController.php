@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Validator;
@@ -9,6 +10,8 @@ use Carbon\Carbon;
 
 class BirthdayController extends Controller
 {
+    use ApiResponse;
+
     public function generateBirthday(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -19,10 +22,7 @@ class BirthdayController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => $validator->errors()->first(),
-            ], 422);
+            return $this->validationError($validator->errors()->first(), $validator->errors());
         }
 
         /* 2. Đọc tham số */
@@ -51,10 +51,6 @@ class BirthdayController extends Controller
         }
 
         /* 5. Trả kết quả */
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Tạo thành công ' . count($results) . ' ngày sinh',
-            'data' => $results,
-        ]);
+        return $this->success($results, 'Tạo thành công ' . count($results) . ' ngày sinh');
     }
 }

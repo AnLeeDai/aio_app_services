@@ -5,14 +5,15 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class NameGenerator extends Model
+class Iban extends Model
 {
     use HasFactory;
 
-    protected $table = 'names';
+    protected $table = 'ibans';
 
     protected $fillable = [
-        'full_name',
+        'iban',
+        'bank_name',
     ];
 
     public const UPDATED_AT = null;

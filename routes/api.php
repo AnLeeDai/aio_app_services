@@ -1,38 +1,41 @@
 <?php
 
+use App\Http\Controllers\BirthdayController;
+use App\Http\Controllers\EmailEbayGenerateController;
+use App\Http\Controllers\IbanController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\NameGeneratorController;
+use App\Http\Controllers\PassportController;
 use App\Http\Controllers\PassportMrzController;
 use App\Http\Controllers\PasswordGeneratorController;
-use App\Http\Controllers\BirthdayController;
-use App\Http\Controllers\PassportController;
-use App\Http\Controllers\IbanController;
-use App\Http\Controllers\ServerHealCheck;
+use App\Http\Controllers\ServerHealthCheckController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/heal-check', [ServerHealCheck::class, 'index']);
+// Health check route
+Route::get('/health-check', [ServerHealthCheckController::class, 'index']);
 
-// generate name routes
-Route::post('/names/generate', [NameGeneratorController::class, 'generateName']);
+// Generator routes
+Route::prefix('generate')->group(function () {
+    // Name generation
+    Route::post('/names', [NameGeneratorController::class, 'generateName']);
 
-// generate password routes
-Route::post('/passwords/generate', [PasswordGeneratorController::class, 'generatePassword']);
+    // Password generation
+    Route::post('/passwords', [PasswordGeneratorController::class, 'generatePassword']);
 
-// generate birthday routes
-Route::post('/birthdays/generate', [BirthdayController::class, 'generateBirthday']);
+    // Birthday generation
+    Route::post('/birthdays', [BirthdayController::class, 'generateBirthday']);
 
+    // Passport generation
+    Route::post('/passports', [PassportController::class, 'generatePassport']);
+    Route::post('/passports/dates', [PassportController::class, 'generatePassportDate']);
+    Route::post('/passports/mrz', [PassportMrzController::class, 'generate']);
 
-// generate passport routes
-Route::post('/passports/generate', [PassportController::class, 'generatePassport']);
+    // IBAN generation
+    Route::post('/ibans', [IbanController::class, 'generateIban']);
 
-// generate passport date routes
-Route::post('/passports/generate/date', [PassportController::class, 'generatePassportDate']);
+    // Location generation
+    Route::post('/locations', [LocationController::class, 'generateAddresses']);
 
-// generate passport mrz
-Route::post('/passport/generate/mrz', [PassportMrzController::class, 'generate']);
-
-// generate iban routes
-Route::post('/ibans/generate', [IbanController::class, 'generateIban']);
-
-// generate location routes
-Route::post('/locations/generate', [LocationController::class, 'generateAddresses']);
+    // Email generation
+    Route::post('/emails/ebay', [EmailEbayGenerateController::class, 'generateEmail']);
+});
