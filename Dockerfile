@@ -9,6 +9,7 @@ RUN set -eux; \
         unzip \
         zip \
         libzip-dev \
+        libonig-dev \
         zlib1g-dev \
     ; \
     docker-php-ext-configure zip; \
