@@ -4,15 +4,15 @@ FROM php:8.2-fpm
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
-        git \
-        curl \
-        unzip \
-        zip \
-        libzip-dev \
-        libonig-dev \
-        zlib1g-dev \
-        nginx \
-        gettext-base \
+    git \
+    curl \
+    unzip \
+    zip \
+    libzip-dev \
+    libonig-dev \
+    zlib1g-dev \
+    nginx \
+    gettext-base \
     ; \
     docker-php-ext-configure zip; \
     docker-php-ext-install -j"$(nproc)" mbstring zip; \
@@ -40,6 +40,12 @@ COPY . .
 
 # Run composer again to execute scripts now that app code is present
 RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+
+# Ensure Laravel runtime directories exist and are writable (for PaaS single-container builds)
+RUN set -eux; \
+    mkdir -p storage/framework/{cache,sessions,testing,views} storage/logs bootstrap/cache; \
+    chown -R www-data:www-data storage bootstrap/cache; \
+    chmod -R ug+rwX storage bootstrap/cache
 
 # Copy nginx template and entrypoint
 COPY conf/nginx/nginx-site.template /etc/nginx/templates/default.conf.template
