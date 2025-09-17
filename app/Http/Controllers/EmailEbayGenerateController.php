@@ -74,11 +74,23 @@ class EmailEbayGenerateController extends Controller
      */
     private function generateRandomName(): array
     {
-        // Use Faker library for generating names
-        $faker = \Faker\Factory::create('pt_BR'); // Portuguese Brazil locale for diverse names
-        
-        $firstName = Str::ascii($faker->firstName); // Remove accents
-        $lastName = Str::ascii($faker->lastName);   // Remove accents
+        // Prefer Faker when available, otherwise fallback to a small static pool
+        if (class_exists(\Faker\Factory::class)) {
+            $faker = \Faker\Factory::create('pt_BR'); // Diverse names
+            $firstName = Str::ascii($faker->firstName);
+            $lastName = Str::ascii($faker->lastName);
+        } else {
+            $firstNames = [
+                'Liam','Noah','Oliver','Elijah','James','William','Benjamin','Lucas','Henry','Alexander',
+                'Emma','Olivia','Ava','Isabella','Sophia','Charlotte','Amelia','Mia','Harper','Evelyn'
+            ];
+            $lastNames = [
+                'Smith','Johnson','Williams','Brown','Jones','Garcia','Miller','Davis','Rodriguez','Martinez',
+                'Hernandez','Lopez','Gonzalez','Wilson','Anderson','Thomas','Taylor','Moore','Jackson','Martin'
+            ];
+            $firstName = $firstNames[array_rand($firstNames)];
+            $lastName = $lastNames[array_rand($lastNames)];
+        }
 
         return [
             'first_name' => $firstName,
