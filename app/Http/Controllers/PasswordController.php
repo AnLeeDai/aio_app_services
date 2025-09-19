@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Validator;
 
-class PasswordGeneratorController extends Controller
+class PasswordController extends Controller
 {
     use ApiResponse;
 

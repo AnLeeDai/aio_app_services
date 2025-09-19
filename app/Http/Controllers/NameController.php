@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
-class NameGeneratorController extends Controller
+class NameController extends Controller
 {
     use ApiResponse;
 

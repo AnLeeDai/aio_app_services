@@ -8,7 +8,7 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
-class EmailEbayGenerateController extends Controller
+class EmailEbayController extends Controller
 {
     use ApiResponse;
 
