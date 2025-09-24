@@ -76,6 +76,15 @@ class LocationController extends Controller
                 'La Araucanía', 'Los Ríos', 'Los Lagos', 'Aysén', 'Magallanes y de la Antártica Chilena',
             ],
         ],
+        // Paraguay (PY)
+        'PY' => [
+            'name' => 'Paraguay',
+            'aliases' => ['Paraguay', 'PY'],
+            'states' => [
+                'Asunción', 'Alto Paraguay', 'Alto Paraná', 'Amambay', 'Boquerón', 'Caaguazú', 'Caazapá', 'Canindeyú', 'Central',
+                'Concepción', 'Cordillera', 'Guairá', 'Itapúa', 'Misiones', 'Ñeembucú', 'Paraguarí', 'Presidente Hayes', 'San Pedro',
+            ],
+        ],
     ];
 
     public function generateAddresses(Request $request)

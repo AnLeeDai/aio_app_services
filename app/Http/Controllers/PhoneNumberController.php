@@ -24,6 +24,7 @@ class PhoneNumberController extends Controller
         'CO' => ['code' => '57', 'length' => 10],                                         // XXXXXXXXXX
         'JM' => ['code' => '1', 'length' => 10],                                         // NANP
         'CL' => ['code' => '56', 'length' => 9],                                          // 9XXXXXXXX
+        'PY' => ['code' => '595', 'length' => 9, 'area_length' => 3],                     // (AAA)XXXXXX
     ];
 
     /**

@@ -51,16 +51,16 @@ class EmailEbayController extends Controller
     {
         // Generate name first
         $nameData = $this->generateRandomName();
-        
+
         // Create username from name
         $username = $this->createUsernameFromName($nameData['first_name'], $nameData['last_name']);
-        
+
         // Generate password
         $password = $this->generatePassword();
-        
+
         // Create email format: email|password
         $emailWithPassword = $username . '@' . $domain . '|' . $password;
-        
+
         return [
             'full_name' => $nameData['full_name'],
             'email' => $emailWithPassword,
@@ -80,16 +80,9 @@ class EmailEbayController extends Controller
             $firstName = Str::ascii($faker->firstName);
             $lastName = Str::ascii($faker->lastName);
         } else {
-            $firstNames = [
-                'Liam','Noah','Oliver','Elijah','James','William','Benjamin','Lucas','Henry','Alexander',
-                'Emma','Olivia','Ava','Isabella','Sophia','Charlotte','Amelia','Mia','Harper','Evelyn'
+            return [
+                'data' => []
             ];
-            $lastNames = [
-                'Smith','Johnson','Williams','Brown','Jones','Garcia','Miller','Davis','Rodriguez','Martinez',
-                'Hernandez','Lopez','Gonzalez','Wilson','Anderson','Thomas','Taylor','Moore','Jackson','Martin'
-            ];
-            $firstName = $firstNames[array_rand($firstNames)];
-            $lastName = $lastNames[array_rand($lastNames)];
         }
 
         return [
@@ -111,10 +104,10 @@ class EmailEbayController extends Controller
         // Convert to lowercase and remove accents
         $firstName = Str::lower(Str::ascii($firstName));
         $lastName = Str::lower(Str::ascii($lastName));
-        
+
         // Create username: firstname + lastname + random numbers/letters
         $randomSuffix = $this->generateRandomSuffix();
-        
+
         return $firstName . $lastName . $randomSuffix;
     }
 
@@ -145,7 +138,7 @@ class EmailEbayController extends Controller
         $uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
         $lowercase = 'abcdefghijklmnopqrstuvwxyz';
         $numbers = '0123456789';
-        
+
         $password = '';
         $password .= $uppercase[rand(0, strlen($uppercase) - 1)]; // 1 uppercase
         $password .= $lowercase[rand(0, strlen($lowercase) - 1)]; // 1 lowercase

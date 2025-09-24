@@ -6,7 +6,6 @@ use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 
 class NameController extends Controller
@@ -26,104 +25,9 @@ class NameController extends Controller
         'CN' => ['locale' => 'zh_CN', 'order' => 'L F'],
         'KR' => ['locale' => 'ko_KR', 'order' => 'L F'],
         'BR' => ['locale' => 'pt_BR', 'order' => 'F M L'],
+        'PY' => ['locale' => 'es_ES', 'order' => 'F M L'], // Use es_ES for Paraguay as es_PY may not be available in Faker
     ];
 
-    private array $dataset = [
-        'en_US' => [
-            'male' => ['Liam', 'Noah', 'Oliver', 'Elijah', 'James', 'William', 'Benjamin', 'Lucas', 'Henry', 'Alexander'],
-            'female' => ['Olivia', 'Emma', 'Ava', 'Charlotte', 'Sophia', 'Amelia', 'Isabella', 'Mia', 'Evelyn', 'Harper'],
-            'last' => ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez'],
-        ],
-        'en_GB' => [
-            'male' => ['Muhammad', 'Noah', 'Oliver', 'Arthur', 'George', 'Leo', 'Oscar', 'Harry', 'Henry', 'Charlie'],
-            'female' => ['Olivia', 'Amelia', 'Isla', 'Ava', 'Ivy', 'Freya', 'Lily', 'Florence', 'Mia', 'Evie'],
-            'last' => ['Smith', 'Jones', 'Williams', 'Taylor', 'Brown', 'Davies', 'Evans', 'Thomas', 'Wilson', 'Johnson'],
-        ],
-        'vi_VN' => [
-            'male' => ['Anh', 'Minh', 'Dũng', 'Huy', 'Phong', 'Tuấn', 'Khang', 'Đạt', 'Bảo', 'Khánh'],
-            'female' => ['Anh', 'Linh', 'Ngọc', 'Trang', 'Phương', 'Mai', 'Thảo', 'Hà', 'Hương', 'Yến'],
-            'last' => ['Nguyễn', 'Trần', 'Lê', 'Phạm', 'Huỳnh', 'Hoàng', 'Phan', 'Vũ', 'Đặng', 'Bùi'],
-        ],
-        'de_DE' => [
-            'male' => ['Noah', 'Matteo', 'Elias', 'Luca', 'Leon', 'Theo', 'Finn', 'Paul', 'Emil', 'Henry'],
-            'female' => ['Emilia', 'Sophia', 'Emma', 'Hannah', 'Mia', 'Lina', 'Ella', 'Lia', 'Leni', 'Mila'],
-            'last' => ['Müller', 'Schmidt', 'Schneider', 'Fischer', 'Weber', 'Meyer', 'Wagner', 'Schulz', 'Becker', 'Hoffmann'],
-        ],
-        'fr_FR' => [
-            'male' => ['Lucas', 'Hugo', 'Gabriel', 'Louis', 'Arthur', 'Raphaël', 'Adam', 'Léo', 'Ethan', 'Nathan'],
-            'female' => ['Emma', 'Jade', 'Louise', 'Alice', 'Chloé', 'Lina', 'Rose', 'Anna', 'Léa', 'Léna'],
-            'last' => ['Martin', 'Bernard', 'Thomas', 'Petit', 'Robert', 'Richard', 'Durand', 'Dubois', 'Moreau', 'Laurent'],
-        ],
-        'ja_JP' => [
-            'male' => ['Haruto', 'Sōta', 'Yuto', 'Riku', 'Ren', 'Yuki', 'Sora', 'Kaito', 'Ryūsei', 'Yūma'],
-            'female' => ['Yui', 'Hina', 'Rin', 'Mio', 'Sakura', 'Tsumugi', 'Aoi', 'Miyu', 'Yuna', 'Hiyori'],
-            'last' => ['Satō', 'Suzuki', 'Takahashi', 'Tanaka', 'Watanabe', 'Itō', 'Yamamoto', 'Nakamura', 'Kobayashi', 'Katō'],
-        ],
-        'es_ES' => [
-            'male' => ['Martín', 'Hugo', 'Mateo', 'Lucas', 'Leo', 'Daniel', 'Alejandro', 'Pablo', 'Enzo', 'Manuel'],
-            'female' => ['Lucía', 'Sofía', 'Martina', 'Valeria', 'Julia', 'Paula', 'Alba', 'Emma', 'Sara', 'Carmen'],
-            'last' => ['García', 'Rodríguez', 'González', 'Fernández', 'López', 'Martínez', 'Sánchez', 'Pérez', 'Romero', 'Torres'],
-        ],
-        'it_IT' => [
-            'male' => ['Leonardo', 'Francesco', 'Alessandro', 'Lorenzo', 'Matteo', 'Tommaso', 'Edoardo', 'Gabriele', 'Riccardo', 'Andrea'],
-            'female' => ['Sofia', 'Giulia', 'Aurora', 'Ginevra', 'Alice', 'Beatrice', 'Emma', 'Vittoria', 'Martina', 'Chiara'],
-            'last' => ['Rossi', 'Russo', 'Ferrari', 'Esposito', 'Bianchi', 'Romano', 'Colombo', 'Ricci', 'Marino', 'Greco'],
-        ],
-        'ru_RU' => [
-            'male' => ['Mikhail', 'Alexander', 'Artem', 'Matvey', 'Maxim', 'Ivan', 'Dmitry', 'Nikita', 'Kirill', 'Yegor'],
-            'female' => ['Sofia', 'Anna', 'Maria', 'Eva', 'Victoria', 'Olga', 'Natalia', 'Elena', 'Daria', 'Polina'],
-            'last' => ['Ivanov', 'Smirnov', 'Kuznetsov', 'Popov', 'Volkov', 'Sokolov', 'Lebedev', 'Morozov', 'Petrov', 'Novikov'],
-        ],
-        'zh_CN' => [
-            'male' => ['Wei', 'Hao', 'Jun', 'Lei', 'Qiang', 'Ming', 'Peng', 'Jie', 'Chao', 'Bo'],
-            'female' => ['Fang', 'Li', 'Na', 'Jing', 'Yan', 'Xia', 'Ling', 'Mei', 'Ying', 'Hui'],
-            'last' => ['Wang', 'Li', 'Zhang', 'Liu', 'Chen', 'Yang', 'Huang', 'Zhao', 'Wu', 'Zhou'],
-        ],
-        'ko_KR' => [
-            'male' => ['Min-jun', 'Seo-jun', 'Ji-hoon', 'Hyun-woo', 'Jun-seo', 'Ha-joon', 'Ji-hu', 'Do-hyun', 'Joon-woo', 'Sung-min'],
-            'female' => ['Seo-yeon', 'Ji-woo', 'Ha-yoon', 'Ji-yoon', 'Soo-min', 'Seo-ah', 'I-seo', 'Arin', 'Harin', 'Ji-yu'],
-            'last' => ['Kim', 'Lee', 'Park', 'Choi', 'Jung', 'Kang', 'Cho', 'Yoon', 'Jang', 'Lim'],
-        ],
-        'pt_BR' => [
-            'male' => [
-                'Miguel', 'Arthur', 'Heitor', 'Theo', 'Davi', 'Gabriel', 'Gael', 'Ravi', 'Benício', 'Samuel',
-                'Pedro', 'João', 'Bernardo', 'Lucas', 'Matheus', 'Enzo', 'Henrique', 'Gustavo', 'Lorenzo', 'Rafael',
-                'Daniel', 'Eduardo', 'Caio', 'Thiago', 'Luiz', 'Guilherme', 'Vinícius', 'Felipe', 'Isaac', 'Nicolas',
-                'Antônio', 'Carlos', 'Bruno', 'Fernando', 'Rodrigo', 'Marcelo', 'André', 'Vítor', 'Yuri', 'Pietro',
-                'Raul', 'Danilo', 'Murilo', 'Diego', 'Ícaro', 'Otávio', 'Alex', 'Alexandre', 'Vicente', 'Nathan',
-                'Bento', 'Igor', 'Luan', 'Kevin', 'Leandro', 'Marcos', 'Márcio', 'Jorge', 'Wellington', 'Álvaro',
-                'Alisson', 'Cristian', 'Fábio', 'Jonathan', 'Wallace', 'Ruan', 'José', 'Elias', 'Estevão', 'Emerson',
-                'Everton', 'Fabrício', 'Giovani', 'Hugo', 'Iago', 'Jonas', 'Kauê', 'Leonardo', 'Máximo', 'Mateus',
-                'Moisés', 'Nilson', 'Paulo', 'Renan', 'Renato', 'Ricardo', 'Roberto', 'Rômulo', 'Sérgio', 'Tiago',
-                'Túlio', 'Victor', 'William', 'Yago', 'Ygor', 'Caíque', 'Enrico', 'Caetano', 'Silas', 'Orlando',
-            ],
-            'female' => [
-                'Helena', 'Alice', 'Laura', 'Manuela', 'Isabella', 'Sophia', 'Valentina', 'Luna', 'Maria', 'Luiza',
-                'Ana', 'Júlia', 'Beatriz', 'Mariana', 'Gabriela', 'Rafaela', 'Giovana', 'Vitória', 'Camila', 'Letícia',
-                'Heloísa', 'Cecília', 'Isabel', 'Lívia', 'Larissa', 'Nicole', 'Sarah', 'Elisa', 'Esther', 'Rebeca',
-                'Bianca', 'Clara', 'Carolina', 'Fernanda', 'Eduarda', 'Natália', 'Yasmin', 'Bruna', 'Patrícia', 'Aline',
-                'Amanda', 'Daniela', 'Simone', 'Priscila', 'Sabrina', 'Tainá', 'Taís', 'Tatiane', 'Renata', 'Juliana',
-                'Joana', 'Antônia', 'Clarice', 'Catarina', 'Sílvia', 'Débora', 'Mônica', 'Tereza', 'Noêmia', 'Eliane',
-                'Elaine', 'Cristiane', 'Adriana', 'Isadora', 'Lorena', 'Mirela', 'Mirella', 'Milena', 'Melissa', 'Pietra',
-                'Paola', 'Paula', 'Paloma', 'Pâmela', 'Bárbara', 'Carla', 'Karina', 'Clarissa', 'Daniella', 'Janaína',
-                'Laila', 'Laís', 'Marcela', 'Márcia', 'Maysa', 'Melina', 'Nádia', 'Nathalia', 'Nayara', 'Olivia',
-                'Priscilla', 'Rafaella', 'Raissa', 'Sofia', 'Stefany', 'Talita', 'Thayná', 'Vanessa', 'Verônica', 'Yara',
-            ],
-            'last' => [
-                'Silva', 'Santos', 'Oliveira', 'Souza', 'Pereira', 'Costa', 'Rodrigues', 'Almeida', 'Ribeiro', 'Ferreira',
-                'Carvalho', 'Gomes', 'Martins', 'Araújo', 'Melo', 'Castro', 'Barros', 'Pinto', 'Cardoso', 'Teixeira',
-                'Moreira', 'Correia', 'Dias', 'Campos', 'Vieira', 'Monteiro', 'Moura', 'Nunes', 'Marques', 'Machado',
-                'Lopes', 'Freitas', 'Lima', 'Fonseca', 'Batista', 'Ramos', 'Rocha', 'Duarte', 'Farias', 'Cavalcanti',
-                'Assis', 'Tavares', 'Pires', 'Coutinho', 'Barreto', 'Moraes', 'Xavier', 'Braga', 'Figueiredo', 'Brito',
-                'Santiago', 'Coelho', 'Camargo', 'Guimarães', 'Peixoto', 'Amorim', 'Paiva', 'Freire', 'Rezende', 'Mota',
-                'Dantas', 'Mesquita', 'Siqueira', 'Valente', 'Dutra', 'Leitão', 'Sales', 'Queiroz', 'Viana', 'Soares',
-                'Barroso', 'Pacheco', 'Cunha', 'Nogueira', 'Teles', 'Aguiar', 'Portela', 'Gouveia', 'Luz', 'Maia',
-                'Mattos', 'Mendonça', 'Prado', 'Quintana', 'Rangel', 'Salgado', 'Cardozo', 'Vilela', 'Sampaio', 'Silveira',
-                'Pinheiro', 'Bittencourt', 'Lira', 'Leite', 'Nascimento', 'Pimenta', 'Torres', 'Macedo', 'Medeiros', 'Borges',
-            ],
-        ],
-    ];
-    
     public function generateName(Request $request)
     {
         /*  Validate */
@@ -152,9 +56,18 @@ class NameController extends Controller
             $order = trim(preg_replace('/\s+/', ' ', $order));
         }
 
-        /* Tạo list tên duy nhất bằng Faker (fallback dataset nếu thiếu) */
-        $faker = class_exists(\Faker\Factory::class) ? \Faker\Factory::create($locale) : null;
-        $data = $this->dataset[$locale] ?? $this->dataset['en_US'];
+        /* Kiểm tra Faker availability */
+        if (!class_exists(\Faker\Factory::class)) {
+            return $this->error('Faker library không khả dụng. Vui lòng cài đặt faker/faker package.');
+        }
+
+        // Tạo Faker instance với fallback locale
+        try {
+            $faker = \Faker\Factory::create($locale);
+        } catch (\InvalidArgumentException $e) {
+            // Nếu locale không được hỗ trợ, fallback về en_US
+            $faker = \Faker\Factory::create('en_US');
+        }
 
         $names = [];
         $seen = [];
@@ -164,33 +77,41 @@ class NameController extends Controller
         while (count($names) < $total && $attempts < $maxAttempts) {
             $attempts++;
 
-            if ($faker) {
-                $gender = $genderOpt === 'random'
-                    ? $faker->randomElement(['male', 'female'])
-                    : $genderOpt;
+            $gender = $genderOpt === 'random'
+                ? $faker->randomElement(['male', 'female'])
+                : $genderOpt;
 
-                $first = $gender === 'male' ? $faker->firstNameMale : $faker->firstNameFemale;
+            try {
+                // Thử sử dụng gender-specific methods trước
+                if ($gender === 'male' && method_exists($faker, 'firstNameMale')) {
+                    $first = $faker->firstNameMale;
+                } elseif ($gender === 'female' && method_exists($faker, 'firstNameFemale')) {
+                    $first = $faker->firstNameFemale;
+                } else {
+                    $first = $faker->firstName;
+                }
+
                 $middle = '';
                 if (str_contains($order, 'M')) {
-                    // tránh trùng với first
+                    $middleAttempts = 0;
                     do {
-                        $middle = $gender === 'male' ? $faker->firstNameMale : $faker->firstNameFemale;
-                    } while ($middle === $first);
+                        if ($gender === 'male' && method_exists($faker, 'firstNameMale')) {
+                            $middle = $faker->firstNameMale;
+                        } elseif ($gender === 'female' && method_exists($faker, 'firstNameFemale')) {
+                            $middle = $faker->firstNameFemale;
+                        } else {
+                            $middle = $faker->firstName;
+                        }
+                        $middleAttempts++;
+                    } while ($middle === $first && $middleAttempts < 5);
                 }
+
                 $last = $faker->lastName;
-            } else {
-                $gender = $genderOpt === 'random'
-                    ? Arr::random(['male', 'female'])
-                    : $genderOpt;
-
-                $first = Arr::random($data[$gender]);
-                $middle = '';
-                if (str_contains($order, 'M')) {
-                    do {
-                        $middle = Arr::random($data[$gender]);
-                    } while ($middle === $first);
-                }
-                $last = Arr::random($data['last']);
+            } catch (\Exception $e) {
+                // Fallback to generic methods nếu có lỗi
+                $first = $faker->firstName;
+                $middle = str_contains($order, 'M') ? $faker->firstName : '';
+                $last = $faker->lastName;
             }
 
             // Ghép theo order
